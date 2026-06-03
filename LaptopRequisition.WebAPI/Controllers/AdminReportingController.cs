@@ -1,7 +1,6 @@
 using LaptopRequisition.Application.DTOs.Admin.Reports;
 using LaptopRequisition.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/reports")] // Dedicated route for admin reports
-    [Authorize(Roles = "Admin")] // Protects all endpoints in this controller
+    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class AdminReportingController : ControllerBase
     {
         private readonly IAdminReportingService _adminReportingService;

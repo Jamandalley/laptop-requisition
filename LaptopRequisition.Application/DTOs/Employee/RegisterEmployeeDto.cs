@@ -23,9 +23,6 @@ namespace LaptopRequisition.Application.DTOs
         public Guid DepartmentId { get; set; } // Changed from String Department to Guid DepartmentId
 
         [Required]
-        public Guid RoleId { get; set; } // Changed from String Role to Guid RoleId
-
-        [Required]
         [StringLength(100, MinimumLength = 6)]
         public string Password { get; set; } = string.Empty; // Initialized to prevent CS8618 warning
 

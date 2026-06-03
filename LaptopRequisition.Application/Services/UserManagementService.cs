@@ -431,11 +431,11 @@ namespace LaptopRequisition.Application.Services
                             continue;
                         }
 
-                        // Check if Role exists
+                        // Check if Role exists and is either "Admin" or "Employee"
                         var role = await _roleRepository.GetByNameAsync(record.RoleName);
-                        if (role == null)
+                        if (role == null || (role.Name != "Admin" && role.Name != "Employee"))
                         {
-                            result.ErrorMessage = $"Role '{record.RoleName}' not found.";
+                            result.ErrorMessage = $"Invalid Role '{record.RoleName}'. Only 'Admin' or 'Employee' roles are allowed for bulk upload.";
                             results.Add(result);
                             continue;
                         }
@@ -448,12 +448,21 @@ namespace LaptopRequisition.Application.Services
                             Email = record.Email,
                             PhoneNumber = record.PhoneNumber,
                             DepartmentId = department.Id,
-                            RoleId = role.Id, // Assign the ID of the found role
-                            Password = record.Password
+                            // RoleId is no longer part of RegisterEmployeeDto, AuthService assigns default "Employee"
+                            Password = record.Password,
+                            ValidationReference = Guid.NewGuid().ToString() // Dummy reference for bulk creation
                         };
 
                         // Register employee using AuthService
-                        await _authService.RegisterEmployeeAsync(registerDto);
+                        var newEmployee = await _authService.RegisterEmployeeAsync(registerDto);
+                        
+                        // If the bulk upload specified "Admin" role, update it after initial creation
+                        if (role.Name == "Admin")
+                        {
+                            newEmployee.RoleId = role.Id;
+                            await _employeeRepository.UpdateAsync(newEmployee);
+                        }
+
                         result.IsSuccess = true;
                     }
                     catch (InvalidOperationException ex)
@@ -479,13 +488,12 @@ namespace LaptopRequisition.Application.Services
                 throw new InvalidOperationException("Employee not found.");
             }
 
-            // Check if the new role exists
+            // Check if the new role exists and is either "Admin" or "Employee"
             var newRole = await _roleRepository.GetByIdAsync(newRoleId);
-            if (newRole == null)
+            if (newRole == null || (newRole.Name != "Admin" && newRole.Name != "Employee"))
             {
-                throw new InvalidOperationException($"Role with ID '{newRoleId}' not found.");
+                throw new InvalidOperationException($"Invalid Role. Only 'Admin' or 'Employee' roles can be assigned.");
             }
-            
             
             employee.RoleId = newRoleId;
             employee.UpdatedAt = DateTime.UtcNow;
@@ -509,7 +517,7 @@ namespace LaptopRequisition.Application.Services
                 throw new InvalidOperationException($"Employee with email '{dto.Email}' already exists.");
             }
 
-            // 3. Check if Department and Role exist
+            // 3. Check if Department and Role exist and are valid
             var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId);
             if (department == null)
             {
@@ -517,9 +525,9 @@ namespace LaptopRequisition.Application.Services
             }
 
             var role = await _roleRepository.GetByIdAsync(dto.RoleId);
-            if (role == null)
+            if (role == null || (role.Name != "Admin" && role.Name != "Employee"))
             {
-                throw new InvalidOperationException($"Role with ID '{dto.RoleId}' not found.");
+                throw new InvalidOperationException($"Invalid Role. Only 'Admin' or 'Employee' roles can be assigned during admin creation.");
             }
 
             // 4. Create RegisterEmployeeDto for AuthService
@@ -530,13 +538,19 @@ namespace LaptopRequisition.Application.Services
                 Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
                 DepartmentId = dto.DepartmentId,
-                RoleId = dto.RoleId,
+                // RoleId is no longer part of RegisterEmployeeDto, AuthService assigns default "Employee"
                 Password = dto.Password,
                 ValidationReference = Guid.NewGuid().ToString() // Dummy reference for admin creation, as OTP is not involved
             };
 
             // 5. Register employee using AuthService
             var newEmployee = await _authService.RegisterEmployeeAsync(registerDto);
+
+            // If the admin creation specified "Admin" role, update it after initial creation
+            if (role.Name == "Admin")
+            {
+                newEmployee.RoleId = role.Id;
+            }
 
             // Update IsVerified and IsLocked based on admin's input
             newEmployee.IsVerified = dto.IsVerified;

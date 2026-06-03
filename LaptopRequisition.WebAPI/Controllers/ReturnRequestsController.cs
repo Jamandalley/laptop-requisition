@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using LaptopRequisition.Application.DTOs.Admin; // Added for AdminReturnRequestFilterDto, ApproveReturnRequestDto
 
 namespace LaptopRequisition.WebAPI.Controllers
 {
@@ -26,12 +27,16 @@ namespace LaptopRequisition.WebAPI.Controllers
 
         private Guid GetCurrentEmployeeId()
         {
-            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            var employeeId = _httpContextAccessor.HttpContext?.User
+                .FindFirst("SourceId")?.Value;
+
+            if (string.IsNullOrEmpty(employeeId))
             {
-                throw new UnauthorizedAccessException("User not authenticated.");
+                throw new UnauthorizedAccessException(
+                    "User not authenticated or employee ID not found in token.");
             }
-            return Guid.Parse(userId);
+
+            return Guid.Parse(employeeId);
         }
 
         /// <summary>
@@ -101,11 +106,5 @@ namespace LaptopRequisition.WebAPI.Controllers
             var returnRequests = await _returnRequestService.GetEmployeeReturnRequestsAsync(employeeId);
             return Ok(returnRequests);
         }
-
-        // Admin-only endpoints (will be implemented later with role-based authorization)
-        // [HttpGet] // Get all return requests (Admin)
-        // [HttpPut("{returnRequestId}/approve")] // Approve return request (Admin)
-        // [HttpPut("{returnRequestId}/reject")] // Reject return request (Admin)
-        // [HttpDelete("{returnRequestId}")] // Delete return request (Admin)
     }
 }

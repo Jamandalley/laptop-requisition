@@ -21,13 +21,25 @@ namespace LaptopRequisition.Application.Services
 
         public async Task<ProfileDto> GetProfileAsync(Guid employeeId)
         {
-            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            Console.WriteLine($"EmployeeId: {employeeId}");
+
+            var employee = await _employeeRepository
+                .GetByIdWithDepartmentAndRoleAsync(employeeId);
+
+            Console.WriteLine($"Employee found: {employee != null}");
+
             if (employee == null)
             {
                 throw new InvalidOperationException("Employee not found.");
             }
 
-            var department = await _departmentRepository.GetByIdAsync(employee.DepartmentId);
+            Console.WriteLine($"Department null: {employee.Department == null}");
+            Console.WriteLine($"Role null: {employee.Role == null}");
+
+            var department = await _departmentRepository
+                .GetByIdAsync(employee.DepartmentId);
+
+            Console.WriteLine($"Department repository result null: {department == null}");
 
             return new ProfileDto
             {
@@ -38,7 +50,7 @@ namespace LaptopRequisition.Application.Services
                 PhoneNumber = employee.PhoneNumber,
                 DepartmentId = employee.DepartmentId,
                 DepartmentName = department?.Name ?? "Unknown",
-                Role = employee.Role.ToString(), // Assuming Role is an enum
+                Role = employee.Role?.Name ?? "Unknown",
                 ProfilePictureUrl = employee.ProfilePictureUrl,
                 IsFirstLogin = employee.IsFirstLogin
             };

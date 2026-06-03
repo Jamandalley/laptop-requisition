@@ -34,7 +34,8 @@ builder.Services.AddCustomSwagger();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySQL(builder.Configuration.GetConnectionString("DefaultConnection") ));
+    options.UseMySQL(builder.Configuration.GetConnectionString("DefaultConnection"),
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure())); // Added EnableRetryOnFailure()
 
 
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
@@ -50,7 +51,7 @@ builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
-builder.Services.AddScoped<IJwtService, JwtService>();
+// REMOVED: builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IRequestService, RequestService>();
 builder.Services.AddScoped<ILaptopService, LaptopService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -70,6 +71,7 @@ builder.Services.AddTransient<LoggingHandler>();
 
 
 builder.Services.Configure<SsoSettings>(builder.Configuration.GetSection("SsoSettings"));
+builder.Services.Configure<AdminSsoSettings>(builder.Configuration.GetSection("AdminSsoSettings")); // Configure AdminSsoSettings
 builder.Services.Configure<OtpApiSettings>(builder.Configuration.GetSection("OtpApiSettings")); 
 builder.Services.Configure<NotificationApiSettings>(builder.Configuration.GetSection("NotificationApiSettings")); 
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection("AuthSettings")); 
@@ -87,6 +89,16 @@ builder.Services
     {
         var ssoSettings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<SsoSettings>>().Value;
         client.BaseAddress = new Uri(ssoSettings.BaseUrl);
+    })
+    .AddHttpMessageHandler<LoggingHandler>(); 
+
+// Register IAdminSsoClient
+builder.Services
+    .AddRefitClient<IAdminSsoClient>()
+    .ConfigureHttpClient((serviceProvider, client) =>
+    {
+        var adminSsoSettings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AdminSsoSettings>>().Value;
+        client.BaseAddress = new Uri(adminSsoSettings.BaseUrl);
     })
     .AddHttpMessageHandler<LoggingHandler>(); 
 

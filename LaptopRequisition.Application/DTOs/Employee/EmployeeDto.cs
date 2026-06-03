@@ -13,5 +13,6 @@ namespace LaptopRequisition.Application.DTOs
         public string DepartmentName { get; set; } = string.Empty; // To display department name
         public string Role { get; set; } = string.Empty;
         public bool IsLocked { get; set; }
+        public bool IsFirstLogin { get; set; } 
     }
 }

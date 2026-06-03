@@ -25,14 +25,18 @@ namespace LaptopRequisition.WebAPI.Controllers
             _httpContextAccessor = httpContextAccessor; // Initialized
         }
 
-        private Guid GetCurrentEmployeeId() // Added helper method
+        private Guid GetCurrentEmployeeId()
         {
-            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            var employeeId = _httpContextAccessor.HttpContext?.User
+                .FindFirst("SourceId")?.Value;
+
+            if (string.IsNullOrEmpty(employeeId))
             {
-                throw new UnauthorizedAccessException("User not authenticated or employee ID not found in token.");
+                throw new UnauthorizedAccessException(
+                    "User not authenticated or employee ID not found in token.");
             }
-            return Guid.Parse(userId);
+
+            return Guid.Parse(employeeId);
         }
         
         [HttpPost]
@@ -88,24 +92,6 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
         }
 
-        
-        [HttpGet]
-        // [Authorize] // Already authorized by controller attribute
-        public async Task<IActionResult> GetAllRequests()
-        {
-            try
-            {
-                var requests = await _requestService.GetAllRequestsAsync();
-
-                return Ok(requests);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception details here
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while fetching all requests.", details = ex.Message });
-            }
-        }
-
        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
@@ -127,78 +113,10 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
         }
         
-        [HttpPut("{id}/approve")]
-        // [Authorize] // Already authorized by controller attribute
-        public async Task<IActionResult> ApproveRequest(Guid id)
-        {
-            try
-            {
-                await _requestService.ApproveRequestAsync(id);
-
-                return Ok(new
-                {
-                    message = "Request approved successfully"
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while approving the request.", details = ex.Message });
-            }
-        }
-        
-        [HttpPut("{id}/reject")]
-        public async Task<IActionResult> RejectRequest(
-            Guid id,
-            RejectRequestDto dto)
-        {
-            try
-            {
-                await _requestService.RejectRequestAsync(id, dto.Reason);
-
-                return Ok(new
-                {
-                    message = "Request rejected successfully"
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while rejecting the request.", details = ex.Message });
-            }
-        }
-
-       
-        [HttpPut("{id}/assign")]
-        public async Task<IActionResult> AssignLaptop(
-            Guid id,
-            AssignLaptopDto dto)
-        {
-            try
-            {
-                await _requestService.AssignLaptopAsync(id, dto.LaptopId);
-
-                return Ok(new
-                {
-                    message = "Laptop assigned successfully"
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                // Log the exception details here
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while assigning the laptop.", details = ex.Message });
-            }
-        }
+        // Removed: [HttpPut("{id}/approve")] - This is an admin action
+        // Removed: [HttpPut("{id}/reject")] - This is an admin action
+        // Removed: [HttpPut("{id}/assign")] - This is an admin action
+        // Removed: [HttpGet] GetAllRequests() - This is an admin action
 
         // New methods for Request Management
         [HttpGet("status")]

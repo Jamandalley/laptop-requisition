@@ -13,7 +13,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/requests")] // Dedicated route for admin request management
-    [Authorize(Roles = "Admin")] // Protects all endpoints in this controller
+    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class AdminRequestController : ControllerBase
     {
         private readonly IRequestService _requestService;
@@ -25,7 +25,7 @@ namespace LaptopRequisition.WebAPI.Controllers
             _returnRequestService = returnRequestService;
         }
 
-        // --- Laptop Requests ---
+        // --- Laptop Requests (Admin) ---
 
         [HttpGet] // GET /api/admin/requests
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PaginatedResultDto<RequestResponseDto>))]
@@ -181,14 +181,13 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
         }
 
-        // --- Return Requests ---
-
-        [HttpGet("return-requests")] // GET /api/admin/requests/return-requests
+        // --- Return Requests (Admin) ---
+        [HttpGet("return-requests/all")] // GET /api/admin/requests/return-requests/all
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PaginatedResultDto<ReturnRequestResponseDto>))]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetFilteredAndPaginatedReturnRequests([FromQuery] AdminReturnRequestFilterDto filter)
+        public async Task<IActionResult> GetAllReturnRequestsForAdmin([FromQuery] AdminReturnRequestFilterDto filter)
         {
             try
             {
@@ -201,36 +200,7 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception details here
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while fetching return requests.", details = ex.Message });
-            }
-        }
-
-        [HttpGet("return-requests/{id}")] // GET /api/admin/requests/return-requests/{id}
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ReturnRequestResponseDto))]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetReturnRequestById(Guid id)
-        {
-            try
-            {
-                var returnRequest = await _returnRequestService.GetReturnRequestByIdAsync(id);
-                return Ok(returnRequest);
-            }
-            catch (InvalidOperationException ex) // For "Return request not found"
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                // Log the exception details here
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while fetching the return request.", details = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while fetching all return requests for admin.", details = ex.Message });
             }
         }
 
@@ -241,7 +211,7 @@ namespace LaptopRequisition.WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ApproveReturnRequest(Guid id, [FromBody] ApproveReturnRequestDto dto) // Changed signature
+        public async Task<IActionResult> AdminApproveReturnRequest(Guid id, [FromBody] ApproveReturnRequestDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -249,11 +219,11 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
             try
             {
-                dto.ReturnRequestId = id; // Ensure the ID from the route matches the DTO
+                dto.ReturnRequestId = id;
                 await _returnRequestService.ApproveReturnRequestAsync(dto);
-                return Ok(new { message = "Return request approved successfully." });
+                return Ok(new { message = "Return request approved successfully by admin." });
             }
-            catch (InvalidOperationException ex) // For "Return request not found" or "Only pending return requests can be approved"
+            catch (InvalidOperationException ex)
             {
                 if (ex.Message.Contains("not found"))
                 {
@@ -267,7 +237,6 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception details here
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while approving the return request.", details = ex.Message });
             }
         }
@@ -279,7 +248,7 @@ namespace LaptopRequisition.WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> RejectReturnRequest(Guid id, [FromBody] RejectRequestDto dto)
+        public async Task<IActionResult> AdminRejectReturnRequest(Guid id, [FromBody] RejectRequestDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -288,9 +257,9 @@ namespace LaptopRequisition.WebAPI.Controllers
             try
             {
                 await _returnRequestService.RejectReturnRequestAsync(id, dto.Reason);
-                return Ok(new { message = "Return request rejected successfully." });
+                return Ok(new { message = "Return request rejected successfully by admin." });
             }
-            catch (InvalidOperationException ex) // For "Return request not found" or "Only pending return requests can be rejected"
+            catch (InvalidOperationException ex)
             {
                 if (ex.Message.Contains("not found"))
                 {
@@ -304,8 +273,39 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception details here
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while rejecting the return request.", details = ex.Message });
+            }
+        }
+
+        [HttpDelete("return-requests/{id}")] // DELETE /api/admin/requests/return-requests/{id}
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> AdminDeleteReturnRequest(Guid id)
+        {
+            try
+            {
+                await _returnRequestService.DeleteReturnRequestAsync(id);
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("not found"))
+                {
+                    return NotFound(new { message = ex.Message });
+                }
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while deleting the return request.", details = ex.Message });
             }
         }
 

@@ -24,15 +24,17 @@ namespace LaptopRequisition.Infrastructure.Services
             }
 
             var response = await base.SendAsync(request, cancellationToken);
-            _logger.LogInformation("⬅️ Response: {StatusCode}", response.StatusCode);
-            
-            // Only log response body if it's not too large and is readable
-            if (response.Content != null && response.Content.Headers.ContentType?.MediaType?.Contains("json") == true)
-            {
-                var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogInformation("📩 Response Body: {ResponseBody}", responseBody);
-            }
-            
+
+            _logger.LogInformation(
+                "Response Content-Type: {Type}",
+                response.Content?.Headers?.ContentType?.MediaType);
+
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Response Body: {Body}",
+                responseBody);
+
             return response;
         }
     }

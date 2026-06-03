@@ -9,7 +9,8 @@ namespace LaptopRequisition.Application.DTOs.Login
         public bool IsSuccess { get; set; }
         public string? Message { get; set; }
 
-        public SsoTokenResponseDto TokenDetails { get; set; } = new SsoTokenResponseDto();
+        // Changed from SsoTokenResponseDto to SsoTokenDetailsDto
+        public SsoTokenDetailsDto TokenDetails { get; set; } = new SsoTokenDetailsDto();
         public EmployeeDto EmployeeDetails { get; set; } = new EmployeeDto();
 
         public bool IsLocked { get; set; }

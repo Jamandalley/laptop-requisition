@@ -3,6 +3,7 @@ using System;
 using LaptopRequisition.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LaptopRequisition.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260601204322_Employee.LockoutEndDate")]
+    partial class EmployeeLockoutEndDate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -83,9 +86,9 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(2116),
+                            CreatedAt = new DateTime(2026, 6, 1, 20, 43, 17, 462, DateTimeKind.Utc).AddTicks(6129),
                             Name = "IT",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(2119)
+                            UpdatedAt = new DateTime(2026, 6, 1, 20, 43, 17, 462, DateTimeKind.Utc).AddTicks(6134)
                         });
                 });
 
@@ -441,26 +444,10 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(3476),
+                            CreatedAt = new DateTime(2026, 6, 1, 20, 43, 17, 462, DateTimeKind.Utc).AddTicks(7818),
                             Description = "Administrator with full access",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(3477)
-                        },
-                        new
-                        {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(3484),
-                            Description = "Standard employee with limited access",
-                            Name = "Employee",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(3485)
-                        },
-                        new
-                        {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            CreatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(3490),
-                            Description = "Engineer specializing in backend development",
-                            Name = "Backend Engineer",
-                            UpdatedAt = new DateTime(2026, 6, 2, 11, 45, 51, 879, DateTimeKind.Utc).AddTicks(3490)
+                            UpdatedAt = new DateTime(2026, 6, 1, 20, 43, 17, 462, DateTimeKind.Utc).AddTicks(7819)
                         });
                 });
 

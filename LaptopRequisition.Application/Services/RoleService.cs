@@ -49,34 +49,6 @@ namespace LaptopRequisition.Application.Services
             };
         }
 
-        public async Task<RoleResponseDto> CreateRoleAsync(CreateRoleDto dto)
-        {
-            var existingRole = await _roleRepository.GetByNameAsync(dto.Name);
-            if (existingRole != null)
-            {
-                throw new InvalidOperationException($"Role with name '{dto.Name}' already exists.");
-            }
-
-            var role = new Role
-            {
-                Id = Guid.NewGuid(),
-                Name = dto.Name,
-                Description = dto.Description,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            await _roleRepository.AddAsync(role);
-            return new RoleResponseDto
-            {
-                Id = role.Id,
-                Name = role.Name,
-                Description = role.Description,
-                CreatedAt = role.CreatedAt,
-                UpdatedAt = role.UpdatedAt
-            };
-        }
-
         public async Task<RoleResponseDto> UpdateRoleAsync(Guid id, UpdateRoleDto dto)
         {
             var role = await _roleRepository.GetByIdAsync(id);

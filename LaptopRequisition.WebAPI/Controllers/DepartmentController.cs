@@ -11,7 +11,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/departments")] // Changed route
-    [Authorize(Roles = "Admin")] // Added authorization
+    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentService _departmentService;

@@ -14,7 +14,7 @@ namespace LaptopRequisition.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/admin/laptops")] // Changed base route to admin-specific
-[Authorize(Roles = "Admin")] // Protects all endpoints in this controller
+[Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
 public class LaptopsController : ControllerBase
 {
     private readonly ILaptopService _laptopService;
@@ -120,9 +120,8 @@ public class LaptopsController : ControllerBase
         try
         {
             // Retrieve UserId and UserName from claims
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            var userNameClaim = User.FindFirst(ClaimTypes.Name); // Or ClaimTypes.GivenName + ClaimTypes.Surname, or a custom claim
-
+            var userIdClaim = User.FindFirst("SourceId");
+            var userNameClaim = User.FindFirst("name");
             if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out Guid userId))
             {
                 return Unauthorized(new { message = "User ID not found in claims." });

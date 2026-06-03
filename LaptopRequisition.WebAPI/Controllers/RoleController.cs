@@ -11,7 +11,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/roles")] // Dedicated route for admin role management
-    [Authorize(Roles = "Admin")] // Protects all endpoints in this controller
+    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
@@ -69,38 +69,6 @@ namespace LaptopRequisition.WebAPI.Controllers
             {
                 // Log the exception details here
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while fetching the role.", details = ex.Message });
-            }
-        }
-
-        [HttpPost] // POST /api/admin/roles
-        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(RoleResponseDto))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CreateRole([FromBody] CreateRoleDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                var newRole = await _roleService.CreateRoleAsync(dto);
-                return CreatedAtAction(nameof(GetRoleById), new { id = newRole.Id }, newRole);
-            }
-            catch (InvalidOperationException ex) // For "Role with name already exists"
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while creating the role.", details = ex.Message });
             }
         }
 

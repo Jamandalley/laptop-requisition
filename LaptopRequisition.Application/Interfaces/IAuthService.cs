@@ -14,8 +14,8 @@ namespace LaptopRequisition.Application.Interfaces
         Task<bool> ResetPasswordAsync(string token, string newPassword);
         Task<bool> ChangePasswordAsync(Guid employeeId, string currentPassword, string newPassword);
         
-        // New method for OTP verification
-        Task VerifyAccountAsync(string validationReference, string otp);
+        // New method for OTP verification - SIMPLIFIED
+        Task VerifyAccountAsync(string validationReference, string otp); // No longer returns anything, just throws on failure
 
         // New method for Admin Login
         Task<LoginResponseDto> AdminLoginAsync(string email, string password);

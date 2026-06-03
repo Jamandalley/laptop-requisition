@@ -41,7 +41,6 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-               
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred during admin login.", details = ex.Message });
             }
         }

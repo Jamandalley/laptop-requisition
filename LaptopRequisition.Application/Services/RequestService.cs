@@ -52,13 +52,14 @@ namespace LaptopRequisition.Application.Services
 
         private Guid GetCurrentEmployeeId()
         {
-            var userId = _httpContextAccessor.HttpContext?.User
-                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var employeeId = _httpContextAccessor.HttpContext?.User
+                .FindFirst("SourceId")?.Value;
 
-            if (userId == null)
-                throw new UnauthorizedAccessException("User not authenticated.");
+            if (string.IsNullOrEmpty(employeeId))
+                throw new UnauthorizedAccessException(
+                    "User not authenticated or employee ID not found in token.");
 
-            return Guid.Parse(userId);
+            return Guid.Parse(employeeId);
         }
 
         public async Task<RequestResponseDto> CreateRequestAsync(CreateRequestDto dto)

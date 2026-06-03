@@ -24,12 +24,16 @@ namespace LaptopRequisition.WebAPI.Controllers
 
         private Guid GetCurrentEmployeeId()
         {
-            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            var employeeId = _httpContextAccessor.HttpContext?.User
+                .FindFirst("SourceId")?.Value;
+
+            if (string.IsNullOrEmpty(employeeId))
             {
-                throw new UnauthorizedAccessException("User not authenticated or employee ID not found in token.");
+                throw new UnauthorizedAccessException(
+                    "User not authenticated or employee ID not found in token.");
             }
-            return Guid.Parse(userId);
+
+            return Guid.Parse(employeeId);
         }
 
         [HttpGet]

@@ -12,7 +12,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/users")] // Dedicated route for admin user management
-    [Authorize(Roles = "Admin")] // Protects all endpoints in this controller
+    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class UserManagementController : ControllerBase
     {
         private readonly IUserManagementService _userManagementService;
@@ -427,6 +427,10 @@ namespace LaptopRequisition.WebAPI.Controllers
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {

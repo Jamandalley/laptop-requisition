@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LaptopRequisition.Application\LaptopRequisition.Application.csproj" />
+    <ProjectReference Include="..\LaptopRequisition.Domain\LaptopRequisition.Domain.csproj" /> <!-- NEW: Added missing reference -->
   </ItemGroup>
 
   <ItemGroup>

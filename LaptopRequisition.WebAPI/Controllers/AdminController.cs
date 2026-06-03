@@ -9,7 +9,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin")]
-    [Authorize(Roles = "Admin")] // Protects all endpoints in this controller
+    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class AdminController : ControllerBase
     {
         private readonly IAdminDashboardService _adminDashboardService;

@@ -25,13 +25,52 @@ namespace LaptopRequisition.WebAPI.Controllers
 
         private Guid GetCurrentEmployeeId()
         {
-            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            var claims = _httpContextAccessor.HttpContext?.User.Claims;
+
+            foreach (var claim in claims)
             {
-                throw new UnauthorizedAccessException("User not authenticated or employee ID not found in token.");
+                Console.WriteLine($"CLAIM: {claim.Type} = {claim.Value}");
             }
-            return Guid.Parse(userId);
+
+            var employeeId = _httpContextAccessor.HttpContext?.User
+                .FindFirst("SourceId")?.Value;
+
+            Console.WriteLine($"SourceId found: {employeeId}");
+
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                throw new UnauthorizedAccessException(
+                    "User not authenticated or employee ID not found in token.");
+            }
+
+            return Guid.Parse(employeeId);
         }
+        
+        [HttpGet("claims")]
+        public IActionResult Claims()
+        {
+            return Ok(User.Claims.Select(c => new
+            {
+                c.Type,
+                c.Value
+            }));
+        }
+        
+        [HttpGet("debug-user")]
+        public IActionResult DebugUser()
+        {
+            return Ok(new
+            {
+                IsAuthenticated = User.Identity?.IsAuthenticated,
+                Claims = User.Claims.Select(x => new
+                {
+                    x.Type,
+                    x.Value
+                }),
+                SourceId = User.FindFirst("SourceId")?.Value
+            });
+        }
+        
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProfileDto))]
@@ -85,8 +124,11 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception details here
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while updating profile.", details = ex.Message });
+                return StatusCode(500, new
+                {
+                    message = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
             }
         }
 
