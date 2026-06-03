@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using LaptopRequisition.Application.DTOs.Admin;
 
 namespace LaptopRequisition.WebAPI.Controllers;
 
@@ -20,12 +21,13 @@ public static class ProfileEndpoint
         // -------------------------
         app.MapGet("/api/v1/profile",
             async (HttpContext context,
-                [FromServices] IProfileService service) =>
+                [FromServices] IProfileService service,
+                [AsParameters] EmployeeFilterDto filter) =>
             {
                 try
                 {
                     // var employeeId = GetCurrentEmployeeId(context);
-                    var profile = await service.GetProfilesAsync();
+                    var profile = await service.GetProfilesAsync(filter);
                     return Results.Ok(profile);
                 }
                 catch (UnauthorizedAccessException ex)

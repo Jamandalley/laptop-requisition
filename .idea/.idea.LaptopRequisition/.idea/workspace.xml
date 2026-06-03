@@ -19,49 +19,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Common/EmployeeFilterDto.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Common/ErrorMessageProvider.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Common/PaginatedResultDto.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Common/ResponseModel.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Enums/ResponseEnum.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/LaptopAssignments.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/errorMessages.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminRequestFilterDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminRequestFilterDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminReturnRequestFilterDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminReturnRequestFilterDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/EmployeeFilterDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/EmployeeFilterDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Employee/ProfileDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Employee/ProfileDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Laptop/LaptopFilterDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Laptop/LaptopFilterDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Page/PaginatedFilterDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Page/PaginatedFilterDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Page/PaginatedResultDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Page/PaginatedResultDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IEmployeeRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IEmployeeRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IProfileService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IProfileService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IRequestRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IRequestRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IRequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IRequestService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IReturnRequestRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IReturnRequestRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IReturnRequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IReturnRequestService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IUserManagementService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IUserManagementService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/LaptopService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/LaptopService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ProfileService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ProfileService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RequestService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ReturnRequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ReturnRequestService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/UserManagementService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/UserManagementService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Domain/Employee.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Employee.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Domain/Laptop.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Laptop.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Domain/LaptopRequisition.Domain.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/LaptopRequisition.Domain.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/EmployeeRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/EmployeeRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/LaptopRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/LaptopRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/RequestRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/RequestRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/ReturnRequestRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/ReturnRequestRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminRequestController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminRequestController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/LaptopController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/LaptopController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Domain/Common/EmployeeFilterDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Domain/Common/EmployeeFilterDto.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/ProfileController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/ProfileController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/RequestsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/RequestsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/UserManagementController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/UserManagementController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/LaptopRequisition.WebAPI.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/LaptopRequisition.WebAPI.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -285,7 +246,15 @@
       <option name="project" value="LOCAL" />
       <updated>1780496102282</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="updates">
+      <option name="closed" value="true" />
+      <created>1780506349315</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1780506349315</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -303,7 +272,8 @@
     <MESSAGE value="Integrated otp, sso and admin portal" />
     <MESSAGE value="Auth and Business logic implementation" />
     <MESSAGE value="Added ConnectionStrings to appsettings.json" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added ConnectionStrings to appsettings.json" />
+    <MESSAGE value="updates" />
+    <option name="LAST_COMMIT_MESSAGE" value="updates" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
