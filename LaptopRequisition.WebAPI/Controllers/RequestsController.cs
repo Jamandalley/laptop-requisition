@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System; // Added for Guid
 using System.Collections.Generic; // Added for IEnumerable
-using System.Threading.Tasks; // Added for Task
+using System.Threading.Tasks;
+using LaptopRequisition.Application.DTOs.Page; // Added for Task
 using Microsoft.AspNetCore.Http; // Added for StatusCodes
 using LaptopRequisition.Application.DTOs.Request; // Added for RequestStatusDetailDto
 

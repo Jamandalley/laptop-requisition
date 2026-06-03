@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using LaptopRequisition.Application.DTOs.Page;
 
 namespace LaptopRequisition.WebAPI.Controllers
 {

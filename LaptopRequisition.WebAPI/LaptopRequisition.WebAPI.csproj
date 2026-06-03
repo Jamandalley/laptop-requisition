@@ -25,4 +25,10 @@
       <ProjectReference Include="..\LaptopRequisition.Infrastructure\LaptopRequisition.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Update="errorMessages.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>

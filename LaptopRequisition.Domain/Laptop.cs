@@ -28,6 +28,7 @@ namespace LaptopRequisition.Domain
 
         public LaptopStatus Status { get; set; } = LaptopStatus.Available;
 
+        //Remove the AssignedToEmployeeId and AssignedToEmployee
         public Guid? AssignedToEmployeeId { get; set; }
         public virtual Employee? AssignedToEmployee { get; set; }
         public DateTime? AssignedAt { get; set; }

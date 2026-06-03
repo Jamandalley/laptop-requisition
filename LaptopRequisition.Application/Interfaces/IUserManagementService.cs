@@ -2,7 +2,8 @@ using LaptopRequisition.Application.DTOs.Admin;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
 using System; // Added for Guid
-using System.Collections.Generic; // Added for IEnumerable
+using System.Collections.Generic;
+using LaptopRequisition.Application.DTOs.Page; // Added for IEnumerable
 using Microsoft.AspNetCore.Http; // Added for IFormFile
 
 namespace LaptopRequisition.Application.Interfaces

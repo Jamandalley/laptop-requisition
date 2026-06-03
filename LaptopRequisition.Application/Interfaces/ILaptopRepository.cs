@@ -3,7 +3,8 @@ using System; // Added for Guid
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
-using LaptopRequisition.Application.DTOs.Laptop; // Added for LaptopFilterDto
+using LaptopRequisition.Application.DTOs.Laptop;
+using LaptopRequisition.Application.DTOs.Page; // Added for LaptopFilterDto
 using LaptopRequisition.Domain.Enums; // Added for LaptopStatus
 
 namespace LaptopRequisition.Application.Interfaces

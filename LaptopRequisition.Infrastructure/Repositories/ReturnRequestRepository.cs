@@ -8,7 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs.Request; 
 using LaptopRequisition.Application.DTOs; 
-using LaptopRequisition.Application.DTOs.Admin; // Added for AdminReturnRequestFilterDto
+using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page; // Added for AdminReturnRequestFilterDto
 
 namespace LaptopRequisition.Infrastructure.Repositories
 {

@@ -5,43 +5,40 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using LaptopRequisition.Domain.Common;
+using LaptopRequisition.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
-namespace LaptopRequisition.Application.Services
-{
-    public class ProfileService : IProfileService
+namespace LaptopRequisition.Application.Services;
+public class ProfileService(
+        IEmployeeRepository employeeRepository,
+        IDepartmentRepository departmentRepository,
+        ILogger<ProfileService> logger)
+        : IProfileService
     {
-        private readonly IEmployeeRepository _employeeRepository;
-        private readonly IDepartmentRepository _departmentRepository; // To get department name
-        
-        public ProfileService(IEmployeeRepository employeeRepository, IDepartmentRepository departmentRepository)
+        // -------------------------
+        // GET SINGLE PROFILE
+        // -------------------------
+        public async Task<Response<ProfileDto>> GetProfileAsync(Guid employeeId)
         {
-            _employeeRepository = employeeRepository;
-            _departmentRepository = departmentRepository;
-           }
-
-        public async Task<ProfileDto> GetProfileAsync(Guid employeeId)
-        {
-            Console.WriteLine($"EmployeeId: {employeeId}");
-
-            var employee = await _employeeRepository
+            var employee = await employeeRepository
                 .GetByIdWithDepartmentAndRoleAsync(employeeId);
-
-            Console.WriteLine($"Employee found: {employee != null}");
 
             if (employee == null)
             {
-                throw new InvalidOperationException("Employee not found.");
+                return Response<ProfileDto>.Fail(
+                    ResponseCode.BadRequest,
+                    ["Employee not found"]);
             }
 
-            Console.WriteLine($"Department null: {employee.Department == null}");
-            Console.WriteLine($"Role null: {employee.Role == null}");
-
-            var department = await _departmentRepository
+            var department = await departmentRepository
                 .GetByIdAsync(employee.DepartmentId);
 
-            Console.WriteLine($"Department repository result null: {department == null}");
+            // var currentLaptop = employee.Laptops?
+            //     .OrderByDescending(x => x.AssignedDate)
+            //     .FirstOrDefault();
 
-            return new ProfileDto
+            var dto = new ProfileDto
             {
                 Id = employee.Id,
                 StaffId = employee.StaffId,
@@ -52,80 +49,152 @@ namespace LaptopRequisition.Application.Services
                 DepartmentName = department?.Name ?? "Unknown",
                 Role = employee.Role?.Name ?? "Unknown",
                 ProfilePictureUrl = employee.ProfilePictureUrl,
-                IsFirstLogin = employee.IsFirstLogin
+                IsFirstLogin = employee.IsFirstLogin,
+
+                // optional enrichment (if added to DTO)
+                // AssignedLaptopId = currentLaptop?.LaptopId,
+                // AssignedLaptopSerialNumber = currentLaptop?.Laptop?.SerialNumber
             };
+
+            return Response<ProfileDto>.Ok(dto);
         }
 
-        public async Task UpdateProfileAsync(Guid employeeId, UpdateProfileDto dto)
+        // -------------------------
+        // GET ALL PROFILES (OPTIONAL USE CASE)
+        // -------------------------
+        public async Task<Response<List<ProfileDto>>> GetProfilesAsync()
         {
-            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            var employees = await employeeRepository
+                .GetAllWithDepartmentAndRoleAsync();
+
+            if (employees == null || !employees.Any())
+            {
+                return Response<List<ProfileDto>>.Fail(
+                    ResponseCode.BadRequest,
+                    ["No employees found"]);
+            }
+
+            var dtos = employees.Select(employee =>
+            {
+                // var currentLaptop = employee.Laptops?
+                //     .OrderByDescending(x => x.AssignedDate)
+                //     .FirstOrDefault();
+
+                return new ProfileDto
+                {
+                    Id = employee.Id,
+                    StaffId = employee.StaffId,
+                    FullName = employee.FullName,
+                    Email = employee.Email,
+                    PhoneNumber = employee.PhoneNumber,
+                    DepartmentId = employee.DepartmentId,
+                    DepartmentName = employee.Department?.Name ?? "Unknown",
+                    Role = employee.Role?.Name ?? "Unknown",
+                    ProfilePictureUrl = employee.ProfilePictureUrl,
+                    IsFirstLogin = employee.IsFirstLogin,
+
+                    // AssignedLaptopId = currentLaptop?.LaptopId,
+                    // AssignedLaptopSerialNumber = currentLaptop?.Laptop?.SerialNumber
+                };
+            }).ToList();
+
+            return Response<List<ProfileDto>>.Ok(dtos);
+        }
+
+        // -------------------------
+        // UPDATE PROFILE
+        // -------------------------
+        public async Task<Response> UpdateProfileAsync(Guid employeeId, UpdateProfileDto dto)
+        {
+            var employee = await employeeRepository.GetByIdAsync(employeeId);
+
             if (employee == null)
             {
-                throw new InvalidOperationException("Employee not found.");
+                return Response.Fail(ResponseCode.BadRequest, ["Employee not found"]);
             }
 
             employee.FullName = dto.FullName;
             employee.PhoneNumber = dto.PhoneNumber;
             employee.UpdatedAt = DateTime.UtcNow;
 
-            await _employeeRepository.UpdateAsync(employee);
+            await employeeRepository.UpdateAsync(employee);
+
+            return Response.Ok();
         }
 
-        public async Task<string> UploadProfilePictureAsync(Guid employeeId, IFormFile file)
+        // -------------------------
+        // UPLOAD PROFILE PICTURE
+        // -------------------------
+        public async Task<Response<string>> UploadProfilePictureAsync(Guid employeeId, IFormFile file)
         {
-            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            var employee = await employeeRepository.GetByIdAsync(employeeId);
+
             if (employee == null)
             {
-                throw new InvalidOperationException("Employee not found.");
+                return Response<string>.Fail(ResponseCode.BadRequest, ["Employee not found"]);
             }
-            
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "ProfilePictures");
+
+            var uploadsFolder = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "wwwroot",
+                "ProfilePictures");
+
             if (!Directory.Exists(uploadsFolder))
             {
                 Directory.CreateDirectory(uploadsFolder);
             }
 
-            var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+            var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
             var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await file.CopyToAsync(fileStream);
+                await file.CopyToAsync(stream);
             }
-            
+
             var relativePath = $"/ProfilePictures/{uniqueFileName}";
+
             employee.ProfilePictureUrl = relativePath;
             employee.UpdatedAt = DateTime.UtcNow;
-            await _employeeRepository.UpdateAsync(employee);
 
-            return relativePath;
-            // --- End Temporary local file storage implementation ---
+            await employeeRepository.UpdateAsync(employee);
+
+            return Response<string>.Ok(relativePath);
         }
 
-        public async Task RemoveProfilePictureAsync(Guid employeeId)
+        // -------------------------
+        // REMOVE PROFILE PICTURE
+        // -------------------------
+        public async Task<Response> RemoveProfilePictureAsync(Guid employeeId)
         {
-            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            var employee = await employeeRepository.GetByIdAsync(employeeId);
+
             if (employee == null)
             {
-                throw new InvalidOperationException("Employee not found.");
+                return Response.Fail(ResponseCode.BadRequest, ["Employee not found"]);
             }
 
             if (!string.IsNullOrEmpty(employee.ProfilePictureUrl))
             {
-                // --- Temporary local file deletion implementation ---
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-                var filePath = Path.Combine(uploadsFolder, employee.ProfilePictureUrl.TrimStart('/'));
+                var uploadsFolder = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot");
+
+                var filePath = Path.Combine(
+                    uploadsFolder,
+                    employee.ProfilePictureUrl.TrimStart('/'));
 
                 if (File.Exists(filePath))
                 {
                     File.Delete(filePath);
                 }
-                // --- End Temporary local file deletion implementation ---
 
                 employee.ProfilePictureUrl = null;
                 employee.UpdatedAt = DateTime.UtcNow;
-                await _employeeRepository.UpdateAsync(employee);
+
+                await employeeRepository.UpdateAsync(employee);
             }
+
+            return Response.Ok();
         }
     }
-}
