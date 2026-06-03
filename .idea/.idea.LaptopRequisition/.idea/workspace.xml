@@ -16,12 +16,7 @@
     <configurations />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.Development.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.Development.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" afterDir="false" />
-    </list>
+    <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -194,7 +189,7 @@
       <workItem from="1780247621498" duration="34181000" />
       <workItem from="1780386570138" duration="9986000" />
       <workItem from="1780398502243" duration="51586000" />
-      <workItem from="1780476307219" duration="15397000" />
+      <workItem from="1780476307219" duration="15660000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -236,7 +231,15 @@
       <option name="project" value="LOCAL" />
       <updated>1780484164964</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Added ConnectionStrings to appsettings.json">
+      <option name="closed" value="true" />
+      <created>1780496102281</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1780496102282</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -253,7 +256,8 @@
     <MESSAGE value="Integrated SSO into my authentication and updated laptop entity" />
     <MESSAGE value="Integrated otp, sso and admin portal" />
     <MESSAGE value="Auth and Business logic implementation" />
-    <option name="LAST_COMMIT_MESSAGE" value="Auth and Business logic implementation" />
+    <MESSAGE value="Added ConnectionStrings to appsettings.json" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added ConnectionStrings to appsettings.json" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
