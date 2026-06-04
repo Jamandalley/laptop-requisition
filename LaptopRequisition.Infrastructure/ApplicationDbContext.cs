@@ -22,6 +22,7 @@ namespace LaptopRequisition.Infrastructure
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<LaptopAssignments> LaptopAssignments { get; set; } // NEW: Add DbSet for LaptopAssignments
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -43,6 +44,11 @@ namespace LaptopRequisition.Infrastructure
                       .HasForeignKey(e => e.RoleId);
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
+
+                // Removed direct LaptopId foreign key from Employee
+                // entity.HasOne(e => e.Laptop)
+                //       .WithOne(l => l.AssignedToEmployee)
+                //       .HasForeignKey<Employee>(e => e.LaptopId);
             });
 
             modelBuilder.Entity<Department>(entity =>
@@ -96,6 +102,10 @@ namespace LaptopRequisition.Infrastructure
                 entity.HasIndex(l => l.SerialNumber).IsUnique();
                 entity.Property(l => l.Status)
                       .HasConversion<string>();
+                
+                // Removed direct assignment properties from Laptop
+                // entity.Property(l => l.AssignedToEmployeeId).IsRequired(false);
+                // entity.Property(l => l.AssignedAt).IsRequired(false);
             });
 
             modelBuilder.Entity<Request>(entity =>
@@ -139,6 +149,20 @@ namespace LaptopRequisition.Infrastructure
                 entity.HasOne(prt => prt.Employee)
                       .WithMany(e => e.PasswordResetTokens)
                       .HasForeignKey(prt => prt.EmployeeId);
+            });
+
+            // NEW: Configure LaptopAssignments entity
+            modelBuilder.Entity<LaptopAssignments>(entity =>
+            {
+                entity.HasKey(la => new { la.EmployeeId, la.LaptopId }); // Composite primary key
+
+                entity.HasOne(la => la.Employee)
+                      .WithMany() // Employee can have many assignments
+                      .HasForeignKey(la => la.EmployeeId);
+
+                entity.HasOne(la => la.Laptop)
+                      .WithMany() // Laptop can have many assignments (historically)
+                      .HasForeignKey(la => la.LaptopId);
             });
         }
 

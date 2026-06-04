@@ -25,8 +25,13 @@ namespace LaptopRequisition.Infrastructure
             }
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseMySQL(connectionString);
 
+            optionsBuilder.UseMySQL(
+                connectionString,
+                options =>
+                {
+                    options.EnableRetryOnFailure();
+                });
             return new ApplicationDbContext(optionsBuilder.Options);
         }
     }

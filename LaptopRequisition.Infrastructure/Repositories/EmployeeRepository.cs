@@ -77,12 +77,20 @@ namespace LaptopRequisition.Infrastructure.Repositories
                                  .FirstOrDefaultAsync(e => e.Email == email);
         }
 
-        public async Task<Employee?> GetByIdWithDepartmentAndRoleAsync(Guid employeeId)
+        public async Task<Employee?> GetByIdWithDepartmentAndRoleAsync(Guid employeeId, bool includeLaptopAssignments = false)
         {
-            return await _context.Employees
+            var query = _context.Employees
                                  .Include(e => e.Department)
                                  .Include(e => e.Role)
-                                 .FirstOrDefaultAsync(e => e.Id == employeeId);
+                                 .AsQueryable();
+
+            if (includeLaptopAssignments)
+            {
+                query = query.Include(e => e.LaptopAssignments)
+                             .ThenInclude(la => la.Laptop);
+            }
+
+            return await query.FirstOrDefaultAsync(e => e.Id == employeeId);
         }
         
         public async Task<int> CountAllAsync()
@@ -102,15 +110,18 @@ namespace LaptopRequisition.Infrastructure.Repositories
 
         public async Task<int> CountUsersWithAssignedLaptopsAsync()
         {
-            return await _context.Laptops.Where(l => l.AssignedToEmployeeId != null).Select(l => l.AssignedToEmployeeId).Distinct().CountAsync();
+            // FIX: Query LaptopAssignments instead of Laptop
+            return await _context.LaptopAssignments
+                                 .Select(la => la.EmployeeId)
+                                 .Distinct()
+                                 .CountAsync();
         }
 
         public async Task<int> CountUsersWithoutLaptopsAsync()
         {
-            
-            var employeesWithLaptops = await _context.Laptops
-                                                     .Where(l => l.AssignedToEmployeeId != null)
-                                                     .Select(l => l.AssignedToEmployeeId)
+            // FIX: Query LaptopAssignments instead of Laptop
+            var employeesWithLaptops = await _context.LaptopAssignments
+                                                     .Select(la => la.EmployeeId)
                                                      .Distinct()
                                                      .ToListAsync();
             
@@ -164,18 +175,14 @@ namespace LaptopRequisition.Infrastructure.Repositories
            
             if (filter.HasAssignedLaptop.HasValue)
             {
-                var employeesWithLaptops = await _context.Laptops
-                                                         .Where(l => l.AssignedToEmployeeId != null)
-                                                         .Select(l => l.AssignedToEmployeeId!.Value)
-                                                         .Distinct()
-                                                         .ToListAsync();
+                // FIX: Use LaptopAssignments for filtering
                 if (filter.HasAssignedLaptop.Value)
                 {
-                    query = query.Where(e => employeesWithLaptops.Contains(e.Id));
+                    query = query.Where(e => e.LaptopAssignments.Any());
                 }
                 else
                 {
-                    query = query.Where(e => !employeesWithLaptops.Contains(e.Id));
+                    query = query.Where(e => !e.LaptopAssignments.Any());
                 }
             }
 
@@ -242,7 +249,6 @@ namespace LaptopRequisition.Infrastructure.Repositories
         public async Task<IEnumerable<Employee>> GetDeletedEmployeesAsync()
         {
            return await _context.Employees.IgnoreQueryFilters()
-                                 .Where(e => e.IsDeleted)
                                  .Include(e => e.Department)
                                  .Include(e => e.Role)
                                  .ToListAsync();
@@ -270,17 +276,11 @@ namespace LaptopRequisition.Infrastructure.Repositories
             var employee = await _context.Employees.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == employeeId);
             if (employee != null)
             {
-                // 1. Unassign any laptops assigned to this employee
-                var assignedLaptops = await _context.Laptops
-                                                    .Where(l => l.AssignedToEmployeeId == employeeId)
+                // FIX: Delete associated LaptopAssignments
+                var assignedLaptops = await _context.LaptopAssignments
+                                                    .Where(la => la.EmployeeId == employeeId)
                                                     .ToListAsync();
-                foreach (var laptop in assignedLaptops)
-                {
-                    laptop.AssignedToEmployeeId = null;
-                    laptop.AssignedAt = null;
-                    laptop.Status = LaptopStatus.Available; // Set status back to Available
-                    _context.Laptops.Update(laptop);
-                }
+                _context.LaptopAssignments.RemoveRange(assignedLaptops);
 
                 // 2. Disassociate Requests and ReturnRequests (set EmployeeId to null)
                 var requests = await _context.Requests
@@ -325,13 +325,18 @@ namespace LaptopRequisition.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PaginatedResultDto<Employee>> GetFilteredAsync(EmployeeFilterDto filter)
+        public async Task<PaginatedResultDto<Employee>> GetFilteredAsync(EmployeeFilterDto filter, bool includeLaptopAssignments = false)
         {
             var query = _context.Employees
                 .Include(x => x.Department)
                 .Include(x => x.Role)
-                // .Include(x => x.Laptops).ThenInclude(a => a.Laptop)
                 .AsQueryable();
+
+            if (includeLaptopAssignments)
+            {
+                query = query.Include(e => e.LaptopAssignments)
+                             .ThenInclude(la => la.Laptop);
+            }
 
             // -------------------------
             // SEARCH
@@ -358,17 +363,18 @@ namespace LaptopRequisition.Infrastructure.Repositories
             if (filter.IsVerified.HasValue)
                 query = query.Where(x => x.IsVerified == filter.IsVerified);
 
-            // if (filter.HasAssignedLaptop.HasValue)
-            // {
-            //     if (filter.HasAssignedLaptop.Value)
-            //     {
-            //         query = query.Where(e => e.Laptops.Any());
-            //     }
-            //     else
-            //     {
-            //         query = query.Where(e => !e.Laptops.Any());
-            //     }
-            // }
+            if (filter.HasAssignedLaptop.HasValue)
+            {
+                // FIX: Use LaptopAssignments for filtering
+                if (filter.HasAssignedLaptop.Value)
+                {
+                    query = query.Where(e => e.LaptopAssignments.Any());
+                }
+                else
+                {
+                    query = query.Where(e => !e.LaptopAssignments.Any());
+                }
+            }
 
             // -------------------------
             // SORTING
