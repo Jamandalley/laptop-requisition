@@ -28,10 +28,10 @@ namespace LaptopRequisition.Domain
 
         public LaptopStatus Status { get; set; } = LaptopStatus.Available;
 
-        //Remove the AssignedToEmployeeId and AssignedToEmployee
-        public Guid? AssignedToEmployeeId { get; set; }
-        public virtual Employee? AssignedToEmployee { get; set; }
-        public DateTime? AssignedAt { get; set; }
+        // Removed direct assignment properties from Laptop, now handled by LaptopAssignments
+        // public Guid? AssignedToEmployeeId { get; set; }
+        // public virtual Employee? AssignedToEmployee { get; set; }
+        // public DateTime? AssignedAt { get; set; }
         public DateTime CreatedAt { get; set; } 
         public DateTime UpdatedAt { get; set; } 
 
@@ -41,5 +41,6 @@ namespace LaptopRequisition.Domain
         
         public ICollection<Request> Requests { get; set; } = new List<Request>();
         public ICollection<ReturnRequest> ReturnRequests { get; set; } = new List<ReturnRequest>();
+        public ICollection<LaptopAssignments> LaptopAssignments { get; set; } = new List<LaptopAssignments>(); // NEW: Added LaptopAssignments navigation property
     }
 }

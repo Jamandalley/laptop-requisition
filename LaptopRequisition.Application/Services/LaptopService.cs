@@ -28,18 +28,21 @@ public class LaptopService : ILaptopService
     private readonly IAuditLogRepository _auditLogRepository; // Added
     private readonly IHttpContextAccessor _httpContextAccessor; // Added
     private readonly INotificationService _notificationService; // Added
+    private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
 
     public LaptopService(ILaptopRepository laptopRepository, 
                          IEmployeeRepository employeeRepository,
                          IAuditLogRepository auditLogRepository, // Added
                          IHttpContextAccessor httpContextAccessor, // Added
-                         INotificationService notificationService) // Added
+                         INotificationService notificationService,
+                         ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
     {
         _laptopRepository = laptopRepository;
         _employeeRepository = employeeRepository;
         _auditLogRepository = auditLogRepository; // Initialized
         _httpContextAccessor = httpContextAccessor; // Initialized
         _notificationService = notificationService; // Initialized
+        _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
     }
 
     public async Task<LaptopResponseDto> CreateLaptopAsync(CreateLaptopDto dto)
@@ -76,8 +79,7 @@ public class LaptopService : ILaptopService
             OperatingSystem = dto.OperatingSystem,
             ScreenSize = dto.ScreenSize,
             Status = dto.Status, // Use the new Status property from DTO
-            AssignedToEmployeeId = null, // New laptops are not assigned
-            AssignedAt = null,           // New laptops are not assigned
+            // Removed direct assignment properties
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             PurchaseDate = dto.PurchaseDate, // New
@@ -99,8 +101,7 @@ public class LaptopService : ILaptopService
             OperatingSystem = laptop.OperatingSystem,
             ScreenSize = laptop.ScreenSize,
             Status = laptop.Status, // Map the new Status property
-            AssignedToEmployeeId = laptop.AssignedToEmployeeId,
-            AssignedAt = laptop.AssignedAt,
+            // Removed direct assignment properties
             PurchaseDate = laptop.PurchaseDate, // New
             WarrantyExpiryDate = laptop.WarrantyExpiryDate // New
         };
@@ -123,8 +124,7 @@ public class LaptopService : ILaptopService
             OperatingSystem = l.OperatingSystem,
             ScreenSize = l.ScreenSize,
             Status = l.Status, // Map the new Status property
-            AssignedToEmployeeId = l.AssignedToEmployeeId,
-            AssignedAt = l.AssignedAt,
+            // Removed direct assignment properties
             PurchaseDate = l.PurchaseDate, // New
             WarrantyExpiryDate = l.WarrantyExpiryDate // New
         });
@@ -139,6 +139,9 @@ public class LaptopService : ILaptopService
             throw new InvalidOperationException("Laptop not found.");
         }
 
+        // Get current assignment if any
+        var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(id);
+
         return new LaptopResponseDto
         {
             Id = laptop.Id,
@@ -152,8 +155,9 @@ public class LaptopService : ILaptopService
             OperatingSystem = laptop.OperatingSystem,
             ScreenSize = laptop.ScreenSize,
             Status = laptop.Status, // Map the new Status property
-            AssignedToEmployeeId = laptop.AssignedToEmployeeId,
-            AssignedAt = laptop.AssignedAt,
+            AssignedToEmployeeId = currentAssignment?.EmployeeId,
+            AssignedAt = currentAssignment?.AssignedDate,
+            AssignedToEmployeeName = currentAssignment?.Employee?.FullName,
             PurchaseDate = laptop.PurchaseDate, // New
             WarrantyExpiryDate = laptop.WarrantyExpiryDate // New
         };
@@ -168,8 +172,11 @@ public class LaptopService : ILaptopService
             throw new InvalidOperationException("Laptop not found.");
         }
 
+        // Get current assignment if any
+        var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(id);
+
         // --- New Validation Logic for Status Change ---
-        if (laptop.Status == LaptopStatus.Assigned && 
+        if (currentAssignment != null && 
             (dto.Status == LaptopStatus.UnderRepair || dto.Status == LaptopStatus.Decommissioned))
         {
             throw new InvalidOperationException("Cannot change status of an assigned laptop to Under Repair or Decommissioned. Please unassign it first.");
@@ -240,23 +247,25 @@ public class LaptopService : ILaptopService
         await _laptopRepository.UpdateAsync(laptop);
 
         // --- New Workflow for Repaired Laptop Becoming Available ---
+        // FIX: Re-evaluate this logic based on LaptopAssignments
         if (originalLaptop.Status == LaptopStatus.UnderRepair && laptop.Status == LaptopStatus.Available)
         {
-            // Check if this laptop was previously assigned to an employee
-            if (originalLaptop.AssignedToEmployeeId.HasValue)
+            // Check if this laptop was previously assigned to an employee via LaptopAssignments
+            if (currentAssignment != null)
             {
-                var employeeId = originalLaptop.AssignedToEmployeeId.Value;
+                var employeeId = currentAssignment.EmployeeId;
 
                 // Check if this employee currently has *any* assigned laptop (a replacement)
-                var currentAssignedLaptop = await _laptopRepository.GetAnyAssignedLaptopByEmployeeIdAsync(employeeId);
+                // FIX: Use LaptopAssignments to get current assigned laptop
+                var employeeCurrentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
 
                 // If the employee has a laptop assigned, and it's NOT the one that just got repaired
-                if (currentAssignedLaptop != null && currentAssignedLaptop.Id != laptop.Id)
+                if (employeeCurrentAssignment != null && employeeCurrentAssignment.LaptopId != laptop.Id)
                 {
                     // Notify the employee to return the replacement laptop
                     await _notificationService.CreateNotificationAsync(
                         employeeId,
-                        $"Your repaired laptop ({laptop.SerialNumber}) is now available! Please return your replacement laptop ({currentAssignedLaptop.SerialNumber})."
+                        $"Your repaired laptop ({laptop.SerialNumber}) is now available! Please return your replacement laptop ({employeeCurrentAssignment.Laptop?.SerialNumber})."
                     );
                     // Optionally, you might want to update a flag on the employee or create a specific return request.
                 }
@@ -277,8 +286,9 @@ public class LaptopService : ILaptopService
             OperatingSystem = laptop.OperatingSystem,
             ScreenSize = laptop.ScreenSize,
             Status = laptop.Status, // Map the new Status property
-            AssignedToEmployeeId = laptop.AssignedToEmployeeId,
-            AssignedAt = laptop.AssignedAt,
+            AssignedToEmployeeId = currentAssignment?.EmployeeId,
+            AssignedAt = currentAssignment?.AssignedDate,
+            AssignedToEmployeeName = currentAssignment?.Employee?.FullName,
             PurchaseDate = laptop.PurchaseDate, // New
             WarrantyExpiryDate = laptop.WarrantyExpiryDate // New
         };
@@ -292,11 +302,12 @@ public class LaptopService : ILaptopService
         {
             throw new InvalidOperationException("Laptop not found.");
         }
-    
-        if (laptop.Status == LaptopStatus.Assigned) // Check against new Status property
+        
+        // Check if laptop is currently assigned via LaptopAssignments
+        var currentAssignment = await _laptopAssignmentRepository.AnyAssignmentForLaptopAsync(id);
+        if (currentAssignment) 
         {
-            throw new InvalidOperationException(
-                "Cannot delete an assigned laptop.");
+            throw new InvalidOperationException("Cannot delete an assigned laptop. Please unassign it first.");
         }
     
         await _laptopRepository.DeleteAsync(id);
@@ -317,24 +328,39 @@ public class LaptopService : ILaptopService
             throw new InvalidOperationException("Employee not found.");
         }
 
-        if (laptop.Status == LaptopStatus.Assigned)
+        // Check if laptop is already assigned
+        var existingLaptopAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(laptopId);
+        if (existingLaptopAssignment != null)
         {
-            throw new InvalidOperationException($"Laptop '{laptop.SerialNumber}' is already assigned.");
+            throw new InvalidOperationException($"Laptop '{laptop.SerialNumber}' is already assigned to employee '{existingLaptopAssignment.Employee?.FullName}'.");
         }
 
         // Check if the employee already has an assigned laptop
-        var existingAssignedLaptop = await _laptopRepository.GetAssignedLaptopByEmployeeIdAsync(employeeId);
-        if (existingAssignedLaptop != null)
+        var existingEmployeeAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
+        if (existingEmployeeAssignment != null)
         {
-            throw new InvalidOperationException($"Employee '{employee.FullName}' already has laptop '{existingAssignedLaptop.SerialNumber}' assigned. Please unassign it first.");
+            throw new InvalidOperationException($"Employee '{existingEmployeeAssignment.Employee?.FullName}' already has laptop '{existingEmployeeAssignment.Laptop?.SerialNumber}' assigned. Please unassign it first.");
         }
 
-        laptop.Status = LaptopStatus.Assigned;
-        laptop.AssignedToEmployeeId = employeeId;
-        laptop.AssignedAt = DateTime.UtcNow;
-        laptop.UpdatedAt = DateTime.UtcNow;
+        // Create new assignment
+        var newAssignment = new LaptopAssignments
+        {
+            EmployeeId = employeeId,
+            LaptopId = laptopId,
+            AssignedDate = DateTime.UtcNow
+        };
+        await _laptopAssignmentRepository.AddAsync(newAssignment);
 
-        await _laptopRepository.UpdateAsync(laptop);
+        // Update laptop status
+        laptop.Status = LaptopStatus.Assigned;
+        laptop.UpdatedAt = DateTime.UtcNow;
+        await _laptopRepository.UpdateAsync(laptop); // This will also save changes to LaptopAssignments due to SaveChangesAsync override
+
+        // Notify employee
+        await _notificationService.CreateNotificationAsync(
+            employeeId,
+            $"A laptop ({laptop.Brand} {laptop.Model} - SN: {laptop.SerialNumber}) has been assigned to you."
+        );
     }
 
     public async Task AdminUnassignLaptopAsync(Guid laptopId)
@@ -345,50 +371,67 @@ public class LaptopService : ILaptopService
             throw new InvalidOperationException("Laptop not found.");
         }
 
-        if (laptop.Status != LaptopStatus.Assigned)
+        // Find the current assignment
+        var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(laptopId);
+
+        if (currentAssignment == null)
         {
             throw new InvalidOperationException($"Laptop '{laptop.SerialNumber}' is not currently assigned.");
         }
 
-        laptop.Status = LaptopStatus.Available;
-        laptop.AssignedToEmployeeId = null;
-        laptop.AssignedAt = null;
-        laptop.UpdatedAt = DateTime.UtcNow;
+        // Remove the assignment
+        await _laptopAssignmentRepository.RemoveAsync(currentAssignment);
 
-        await _laptopRepository.UpdateAsync(laptop);
+        // Update laptop status
+        laptop.Status = LaptopStatus.Available;
+        laptop.UpdatedAt = DateTime.UtcNow;
+        await _laptopRepository.UpdateAsync(laptop); // This will also save changes to LaptopAssignments due to SaveChangesAsync override
+
+        // Notify employee
+        await _notificationService.CreateNotificationAsync(
+            currentAssignment.EmployeeId,
+            $"The laptop ({laptop.Brand} {laptop.Model} - SN: {laptop.SerialNumber}) has been unassigned from you."
+        );
     }
 
     public async Task<PaginatedResultDto<LaptopResponseDto>> GetFilteredAndPaginatedLaptopsAsync(LaptopFilterDto filter)
     {
         var paginatedLaptops = await _laptopRepository.GetFilteredAndPaginatedLaptopsAsync(filter);
 
-        var mappedItems = paginatedLaptops.Items.Select(l => new LaptopResponseDto
+        var mappedItems = new List<LaptopResponseDto>();
+        foreach (var laptop in paginatedLaptops.Items)
         {
-            Id = l.Id,
-            AssetTag = l.AssetTag,
-            Brand = l.Brand,
-            Model = l.Model,
-            SerialNumber = l.SerialNumber,
-            Processor = l.Processor,
-            RAM = l.RAM,
-            Storage = l.Storage,
-            OperatingSystem = l.OperatingSystem,
-            ScreenSize = l.ScreenSize,
-            Status = l.Status,
-            AssignedToEmployeeId = l.AssignedToEmployeeId,
-            AssignedAt = l.AssignedAt,
-            // Include employee details if assigned
-            AssignedToEmployeeName = l.AssignedToEmployee?.FullName,
-            PurchaseDate = l.PurchaseDate, // New
-            WarrantyExpiryDate = l.WarrantyExpiryDate // New
-        }).ToList();
+            var currentAssignment = laptop.LaptopAssignments?
+                                          .OrderByDescending(la => la.AssignedDate)
+                                          .FirstOrDefault();
+            
+            mappedItems.Add(new LaptopResponseDto
+            {
+                Id = laptop.Id,
+                AssetTag = laptop.AssetTag,
+                Brand = laptop.Brand,
+                Model = laptop.Model,
+                SerialNumber = laptop.SerialNumber,
+                Processor = laptop.Processor,
+                RAM = laptop.RAM,
+                Storage = laptop.Storage,
+                OperatingSystem = laptop.OperatingSystem,
+                ScreenSize = laptop.ScreenSize,
+                Status = laptop.Status,
+                AssignedToEmployeeId = currentAssignment?.EmployeeId,
+                AssignedAt = currentAssignment?.AssignedDate,
+                AssignedToEmployeeName = currentAssignment?.Employee?.FullName,
+                PurchaseDate = laptop.PurchaseDate, // New
+                WarrantyExpiryDate = laptop.WarrantyExpiryDate // New
+            });
+        }
 
         return new PaginatedResultDto<LaptopResponseDto>
         {
             Items = mappedItems,
             TotalCount = paginatedLaptops.TotalCount,
             PageNumber = paginatedLaptops.PageNumber,
-            PageSize = paginatedLaptops.PageSize
+            PageSize = filter.PageSize
         };
     }
 
@@ -514,6 +557,11 @@ public class LaptopService : ILaptopService
                 var laptop = allFilteredLaptops.ElementAt(i);
                 int row = i + 2; // Start from row 2 for data
 
+                // Get the current assignment for this specific laptop within the loop
+                var currentAssignment = laptop.LaptopAssignments?
+                                              .OrderByDescending(la => la.AssignedDate)
+                                              .FirstOrDefault();
+
                 worksheet.Cell(row, 1).Value = laptop.Id.ToString();
                 worksheet.Cell(row, 2).Value = laptop.AssetTag;
                 worksheet.Cell(row, 3).Value = laptop.Brand;
@@ -525,8 +573,9 @@ public class LaptopService : ILaptopService
                 worksheet.Cell(row, 9).Value = laptop.OperatingSystem.ToString();
                 worksheet.Cell(row, 10).Value = laptop.ScreenSize;
                 worksheet.Cell(row, 11).Value = laptop.Status.ToString();
-                worksheet.Cell(row, 12).Value = laptop.AssignedToEmployeeId?.ToString();
-                worksheet.Cell(row, 13).Value = laptop.AssignedAt?.ToString("yyyy-MM-dd HH:mm");
+                // FIX: Retrieve AssignedToEmployeeId and AssignedAt from currentAssignment
+                worksheet.Cell(row, 12).Value = currentAssignment?.EmployeeId.ToString();
+                worksheet.Cell(row, 13).Value = currentAssignment?.AssignedDate.ToString("yyyy-MM-dd HH:mm");
                 worksheet.Cell(row, 14).Value = laptop.PurchaseDate.ToString("yyyy-MM-dd");
                 worksheet.Cell(row, 15).Value = laptop.WarrantyExpiryDate.ToString("yyyy-MM-dd");
             }
@@ -556,4 +605,3 @@ public sealed class BulkUploadLaptopDtoMap : ClassMap<BulkUploadLaptopDto>
         Map(m => m.Storage).Name("Storage");
     }
 }
-    

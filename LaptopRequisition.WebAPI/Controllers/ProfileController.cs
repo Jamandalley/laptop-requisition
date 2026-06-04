@@ -7,6 +7,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs.Admin;
+using System.Linq; // Added for LINQ operations
 
 namespace LaptopRequisition.WebAPI.Controllers;
 
@@ -17,20 +18,19 @@ public static class ProfileEndpoint
     public static WebApplication MapProfileEndpoint(this WebApplication app)
     {
         // -------------------------
-        // GET PROFILE
+        // GET ALL PROFILES (ADMIN)
         // -------------------------
-        app.MapGet("/api/v1/profile",
+        app.MapGet("/api/v1/profiles", // Changed route to /profiles
             async (HttpContext context,
                 [FromServices] IProfileService service,
                 [AsParameters] EmployeeFilterDto filter) =>
             {
                 try
                 {
-                    // var employeeId = GetCurrentEmployeeId(context);
-                    var profile = await service.GetProfilesAsync(filter);
-                    return Results.Ok(profile);
+                    var profiles = await service.GetProfilesAsync(filter);
+                    return Results.Ok(profiles);
                 }
-                catch (UnauthorizedAccessException ex)
+                catch (UnauthorizedAccessException)
                 {
                     return Results.Unauthorized();
                 }
@@ -44,7 +44,36 @@ public static class ProfileEndpoint
                 }
             })
             .RequireAuthorization(policy =>
-                policy.RequireRole("Super Admin"))
+                policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin")) // Updated roles
+            .WithTags("ProfileService");
+
+        // -------------------------
+        // GET CURRENT EMPLOYEE PROFILE
+        // -------------------------
+        app.MapGet("/api/v1/profile", // New endpoint for current employee
+            async (HttpContext context,
+                [FromServices] IProfileService service) =>
+            {
+                try
+                {
+                    var employeeId = GetCurrentEmployeeId(context);
+                    var profile = await service.GetProfileAsync(employeeId);
+                    return Results.Ok(profile);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return Results.Unauthorized();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.NotFound(new { message = ex.Message });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(ex.Message);
+                }
+            })
+            .RequireAuthorization() // Any authenticated user
             .WithTags("ProfileService");
 
 
@@ -75,7 +104,7 @@ public static class ProfileEndpoint
                     return Results.Problem(ex.Message);
                 }
             })
-            // .RequireAuthorization()
+            .RequireAuthorization() // Uncommented authorization
             .WithTags("ProfileService");
 
 
@@ -141,38 +170,38 @@ public static class ProfileEndpoint
 
 
         // -------------------------
-        // DEBUG: CLAIMS
+        // DEBUG: CLAIMS (Removed)
         // -------------------------
-        app.MapGet("/api/v1/profile/claims",
-            (HttpContext context) =>
-            {
-                return Results.Ok(context.User.Claims.Select(c => new
-                {
-                    c.Type,
-                    c.Value
-                }));
-            })
-            .WithTags("ProfileService");
+        // app.MapGet("/api/v1/profile/claims",
+        //     (HttpContext context) =>
+        //     {
+        //         return Results.Ok(context.User.Claims.Select(c => new
+        //         {
+        //             c.Type,
+        //             c.Value
+        //         }));
+        //     })
+        //     .WithTags("ProfileService");
 
 
         // -------------------------
-        // DEBUG: USER
+        // DEBUG: USER (Removed)
         // -------------------------
-        app.MapGet("/api/v1/profile/debug-user",
-            (HttpContext context) =>
-            {
-                return Results.Ok(new
-                {
-                    IsAuthenticated = context.User.Identity?.IsAuthenticated,
-                    Claims = context.User.Claims.Select(x => new
-                    {
-                        x.Type,
-                        x.Value
-                    }),
-                    SourceId = context.User.FindFirst("SourceId")?.Value
-                });
-            })
-            .WithTags("ProfileService");
+        // app.MapGet("/api/v1/profile/debug-user",
+        //     (HttpContext context) =>
+        //     {
+        //         return Results.Ok(new
+        //         {
+        //             IsAuthenticated = context.User.Identity?.IsAuthenticated,
+        //             Claims = context.User.Claims.Select(x => new
+        //             {
+        //                 x.Type,
+        //                 x.Value
+        //             }),
+        //             SourceId = context.User.FindFirst("SourceId")?.Value
+        //         });
+        //     })
+        //     .WithTags("ProfileService");
 
         return app;
     }

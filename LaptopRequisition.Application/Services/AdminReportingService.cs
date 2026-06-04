@@ -14,26 +14,31 @@ namespace LaptopRequisition.Application.Services
         private readonly IRequestRepository _requestRepository;
         private readonly IReturnRequestRepository _returnRequestRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
 
         public AdminReportingService(ILaptopRepository laptopRepository,
                                      IRequestRepository requestRepository,
                                      IReturnRequestRepository returnRequestRepository,
-                                     IEmployeeRepository employeeRepository)
+                                     IEmployeeRepository employeeRepository,
+                                     ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
         {
             _laptopRepository = laptopRepository;
             _requestRepository = requestRepository;
             _returnRequestRepository = returnRequestRepository;
             _employeeRepository = employeeRepository;
+            _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
         }
 
         public async Task<LaptopUtilizationReportDto> GetLaptopUtilizationReportAsync()
         {
             var totalLaptops = await _laptopRepository.CountAllAsync();
-            var availableLaptops = await _laptopRepository.CountAvailableAsync();
-            // Corrected: Use LaptopStatus.UnderRepair instead of LaptopStatus.InRepair
             var inRepairLaptops = await _laptopRepository.CountByStatusAsync(LaptopStatus.UnderRepair); 
 
-            var assignedLaptops = totalLaptops - availableLaptops - inRepairLaptops; // Calculate assigned
+            // FIX: Get assigned laptops count from LaptopAssignments
+            var assignedLaptops = (await _laptopAssignmentRepository.GetAllAsync()).Count();
+            
+            // FIX: Calculate available laptops based on total, assigned, and in repair
+            var availableLaptops = totalLaptops - assignedLaptops - inRepairLaptops;
 
             return new LaptopUtilizationReportDto
             {
@@ -76,7 +81,10 @@ namespace LaptopRequisition.Application.Services
             var employees = await _employeeRepository.GetAllWithDepartmentAndRoleAsync(); // Get all employees with their details
             var requests = await _requestRepository.GetAllAsync();
             var returnRequests = await _returnRequestRepository.GetAllAsync();
-            var laptops = await _laptopRepository.GetAllAsync();
+            // var laptops = await _laptopRepository.GetAllAsync(); // No longer needed directly for assigned count
+
+            // FIX: Get all laptop assignments to efficiently count per employee
+            var allLaptopAssignments = await _laptopAssignmentRepository.GetAllAsync();
 
             var reportData = new List<EmployeeActivityReportDto>();
 
@@ -84,7 +92,9 @@ namespace LaptopRequisition.Application.Services
             {
                 var employeeRequests = requests.Where(r => r.EmployeeId == employee.Id && r.CreatedAt >= startDate && r.CreatedAt <= endDate).ToList();
                 var employeeReturnRequests = returnRequests.Where(rr => rr.EmployeeId == employee.Id && rr.CreatedAt >= startDate && rr.CreatedAt <= endDate).ToList();
-                var assignedLaptopsCount = laptops.Count(l => l.AssignedToEmployeeId == employee.Id);
+                
+                // FIX: Count assigned laptops using LaptopAssignments
+                var assignedLaptopsCount = allLaptopAssignments.Count(la => la.EmployeeId == employee.Id);
 
                 reportData.Add(new EmployeeActivityReportDto
                 {

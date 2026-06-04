@@ -28,6 +28,7 @@ namespace LaptopRequisition.Application.Services
         private readonly INotificationService _notificationService;
         private readonly INotificationApi _notificationApi;
         private readonly NotificationApiSettings _notificationApiSettings; 
+        private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
 
         public ReturnRequestService(
             IReturnRequestRepository returnRequestRepository,
@@ -36,7 +37,8 @@ namespace LaptopRequisition.Application.Services
             IHttpContextAccessor httpContextAccessor,
             INotificationService notificationService,
             INotificationApi notificationApi,
-            IOptions<NotificationApiSettings> notificationApiSettingsOptions)
+            IOptions<NotificationApiSettings> notificationApiSettingsOptions,
+            ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
         {
             _returnRequestRepository = returnRequestRepository;
             _employeeRepository = employeeRepository;
@@ -45,6 +47,7 @@ namespace LaptopRequisition.Application.Services
             _notificationService = notificationService;
             _notificationApi = notificationApi;
             _notificationApiSettings = notificationApiSettingsOptions.Value;
+            _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
         }
 
         private Guid GetCurrentEmployeeId()
@@ -90,9 +93,16 @@ namespace LaptopRequisition.Application.Services
             var employeeId = GetCurrentEmployeeId();
             
             var laptop = await _laptopRepository.GetByIdAsync(dto.LaptopId);
-            if (laptop == null || laptop.Status != LaptopStatus.Assigned || laptop.AssignedToEmployeeId != employeeId) // Updated check
+            if (laptop == null)
             {
-                throw new InvalidOperationException("Laptop not found or not assigned to the current employee.");
+                throw new InvalidOperationException("Laptop not found.");
+            }
+
+            // FIX: Check assignment via LaptopAssignments
+            var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(dto.LaptopId);
+            if (currentAssignment == null || currentAssignment.EmployeeId != employeeId)
+            {
+                throw new InvalidOperationException("Laptop not assigned to the current employee.");
             }
             
             var existingPendingReturn = await _returnRequestRepository.GetPendingReturnRequestByLaptopIdAsync(dto.LaptopId); 
@@ -191,8 +201,13 @@ namespace LaptopRequisition.Application.Services
             var laptop = await _laptopRepository.GetByIdAsync(returnRequest.LaptopId);
             if (laptop != null)
             {
-                laptop.AssignedToEmployeeId = null;
-                laptop.AssignedAt = null;
+                // FIX: Remove LaptopAssignment when approving return
+                var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(laptop.Id);
+                if (currentAssignment != null)
+                {
+                    await _laptopAssignmentRepository.RemoveAsync(currentAssignment);
+                }
+
                 // Set laptop status based on returned condition
                 laptop.Status = dto.ReturnedCondition; 
                 await _laptopRepository.UpdateAsync(laptop);

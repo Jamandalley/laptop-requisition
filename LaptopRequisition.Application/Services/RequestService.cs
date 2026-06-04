@@ -16,7 +16,7 @@ using System.IO;
 using LaptopRequisition.Application.DTOs.Request; // Added for RequestStatusDetailDto
 using ClosedXML.Excel; // Added for ClosedXML
 using LaptopRequisition.Application.DTOs.Admin;
-using LaptopRequisition.Application.DTOs.Page; // Added for AdminRequestFilterDto
+using LaptopRequisition.Application.DTOs.Page;
 
 namespace LaptopRequisition.Application.Services
 {
@@ -30,6 +30,7 @@ namespace LaptopRequisition.Application.Services
         private readonly INotificationApi _notificationApi;
         private readonly NotificationApiSettings _notificationApiSettings;
         private readonly IReturnRequestRepository _returnRequestRepository; // Added
+        private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
 
         public RequestService(
             IRequestRepository requestRepository,
@@ -39,7 +40,8 @@ namespace LaptopRequisition.Application.Services
             INotificationService notificationService,
             INotificationApi notificationApi,
             IOptions<NotificationApiSettings> notificationApiSettingsOptions,
-            IReturnRequestRepository returnRequestRepository) // Updated constructor
+            IReturnRequestRepository returnRequestRepository,
+            ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
         {
             _requestRepository = requestRepository;
             _employeeRepository = employeeRepository;
@@ -49,6 +51,7 @@ namespace LaptopRequisition.Application.Services
             _notificationApi = notificationApi;
             _notificationApiSettings = notificationApiSettingsOptions.Value;
             _returnRequestRepository = returnRequestRepository; // Initialized
+            _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
         }
 
         private Guid GetCurrentEmployeeId()
@@ -197,6 +200,24 @@ namespace LaptopRequisition.Application.Services
             if (request.Status != RequestStatus.Approved)
                 throw new InvalidOperationException("Only approved requests can be assigned.");
 
+            // FIX: Check if laptop is already assigned via LaptopAssignments
+            var existingLaptopAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(laptopId);
+            if (existingLaptopAssignment != null)
+            {
+                throw new InvalidOperationException($"Laptop '{laptop.SerialNumber}' is already assigned to employee '{existingLaptopAssignment.Employee?.FullName}'.");
+            }
+
+            // FIX: Check if the employee already has an assigned laptop via LaptopAssignments
+            if (!request.EmployeeId.HasValue)
+            {
+                throw new InvalidOperationException("Request employee ID is missing.");
+            }
+            var existingEmployeeAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(request.EmployeeId.Value);
+            if (existingEmployeeAssignment != null)
+            {
+                throw new InvalidOperationException($"Employee '{existingEmployeeAssignment.Employee?.FullName}' already has laptop '{existingEmployeeAssignment.Laptop?.SerialNumber}' assigned. Please unassign it first.");
+            }
+
             // --- New Logic for Alternative Device Note ---
             string? alternativeNote = null;
             // Simplified comparison: check if preferred specs are significantly different from assigned laptop
@@ -230,8 +251,17 @@ namespace LaptopRequisition.Application.Services
             request.AssignedAt = DateTime.UtcNow;
             request.AlternativeDeviceNote = alternativeNote; // Set the alternative device note
 
-            laptop.Status = LaptopStatus.Assigned; // Updated from laptop.IsAssigned = true;
-            laptop.AssignedToEmployeeId = request.EmployeeId; // Ensure laptop is linked to employee
+            // FIX: Create LaptopAssignment record
+            var newAssignment = new LaptopAssignments
+            {
+                EmployeeId = request.EmployeeId.Value,
+                LaptopId = laptopId,
+                AssignedDate = DateTime.UtcNow
+            };
+            await _laptopAssignmentRepository.AddAsync(newAssignment);
+
+            // Update laptop status
+            laptop.Status = LaptopStatus.Assigned; 
             await _laptopRepository.UpdateAsync(laptop);
 
             await _requestRepository.UpdateAsync(request);
@@ -258,6 +288,9 @@ namespace LaptopRequisition.Application.Services
                 var laptop = await _laptopRepository.GetByIdAsync(request.LaptopId.Value);
                 if (laptop != null)
                 {
+                    // FIX: Get assigned date from LaptopAssignments
+                    var assignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(laptop.Id);
+
                     assignedLaptopDto = new AssignedLaptopDetailDto
                     {
                         Id = laptop.Id,
@@ -270,7 +303,7 @@ namespace LaptopRequisition.Application.Services
                         Storage = laptop.Storage,
                         OperatingSystem = laptop.OperatingSystem.ToString(),
                         ScreenSize = laptop.ScreenSize,
-                        AssignedDate = laptop.AssignedAt ?? DateTime.MinValue
+                        AssignedDate = assignment?.AssignedDate ?? DateTime.MinValue // Use assigned date from LaptopAssignments
                     };
                 }
             }
@@ -289,7 +322,9 @@ namespace LaptopRequisition.Application.Services
 
             if (request.Status >= RequestStatus.Assigned && request.AssignedAt.HasValue)
             {
-                timeline.Add(new RequestTimelineEventDto { Status = RequestStatus.Assigned, Timestamp = request.AssignedAt, Notes = $"Laptop Assigned: {assignedLaptopDto.Brand} {assignedLaptopDto.Model}" });
+                // FIX: Get assigned date from LaptopAssignments for timeline
+                var assignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(request.LaptopId.Value);
+                timeline.Add(new RequestTimelineEventDto { Status = RequestStatus.Assigned, Timestamp = assignment?.AssignedDate ?? request.AssignedAt, Notes = $"Laptop Assigned: {assignedLaptopDto.Brand} {assignedLaptopDto.Model}" });
             }
 
             if (request.IsReceiptConfirmed && request.ReceiptConfirmedAt.HasValue)
@@ -677,7 +712,14 @@ namespace LaptopRequisition.Application.Services
         {
             // 1. Validate that the laptop is assigned to this employee
             var laptop = await _laptopRepository.GetByIdAsync(dto.LaptopId);
-            if (laptop == null || laptop.AssignedToEmployeeId != employeeId)
+            if (laptop == null)
+            {
+                throw new InvalidOperationException("Laptop not found.");
+            }
+
+            // FIX: Check assignment via LaptopAssignments
+            var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(dto.LaptopId);
+            if (currentAssignment == null || currentAssignment.EmployeeId != employeeId)
             {
                 throw new InvalidOperationException("Laptop not found or not assigned to the current employee.");
             }
@@ -741,6 +783,8 @@ namespace LaptopRequisition.Application.Services
             // Retrieve all filtered requests (no pagination for export)
             var allFilteredRequests = (await _requestRepository.GetFilteredAndPaginatedRequestsAsync(new AdminRequestFilterDto
             {
+                PageNumber = 1, // Get all pages
+                PageSize = int.MaxValue, // Get all items
                 SearchTerm = filter.SearchTerm,
                 Status = filter.Status,
                 EmployeeId = filter.EmployeeId,
@@ -748,9 +792,7 @@ namespace LaptopRequisition.Application.Services
                 StartDate = filter.StartDate,
                 EndDate = filter.EndDate,
                 SortBy = filter.SortBy,
-                SortOrder = filter.SortOrder,
-                PageNumber = 1, // Get all pages
-                PageSize = int.MaxValue // Get all items
+                SortOrder = filter.SortOrder
             })).Items.ToList();
 
             using (var workbook = new XLWorkbook())
