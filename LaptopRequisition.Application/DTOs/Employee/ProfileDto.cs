@@ -14,5 +14,7 @@ namespace LaptopRequisition.Application.DTOs.Employee
         public string Role { get; set; } = string.Empty;
         public string? ProfilePictureUrl { get; set; } 
         public bool IsFirstLogin { get; set; } 
+        public Guid? AssignedLaptopId { get; set; }
+        public string? AssignedLaptopSerialNumber { get; set; }
     }
 }

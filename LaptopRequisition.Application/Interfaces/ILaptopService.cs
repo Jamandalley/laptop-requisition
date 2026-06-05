@@ -4,7 +4,8 @@ using System; // Added for Guid
 using LaptopRequisition.Application.DTOs.Laptop; // Added for Laptop DTOs
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
 using Microsoft.AspNetCore.Http; // Added for IFormFile
-using LaptopRequisition.Application.DTOs.Admin; // Added for BulkUploadResultDto
+using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page; // Added for BulkUploadResultDto
 
 namespace LaptopRequisition.Application.Interfaces;
 

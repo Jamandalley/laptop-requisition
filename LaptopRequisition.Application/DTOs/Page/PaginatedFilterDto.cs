@@ -1,4 +1,4 @@
-namespace LaptopRequisition.Application.DTOs
+namespace LaptopRequisition.Application.DTOs.Page
 {
     public abstract class PaginatedFilterDto
     {

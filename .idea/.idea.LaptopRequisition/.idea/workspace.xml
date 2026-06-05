@@ -18,19 +18,22 @@
     <configurations />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="Add laptop assignments integration migration and change SslMode to preferred">
+    <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.Development.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.Development.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="ChangesViewManager" show_ignored="true" />
   <component name="DpaMonitoringSettings">
     <option name="firstShow" value="false" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="63" />
+    <option name="cachedIndexableFilesCount" value="62" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -41,12 +44,12 @@
     &quot;assignee&quot;: &quot;adebow&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/Jamandalley/laptop-requisition.git&quot;,
-    &quot;accountId&quot;: &quot;e96576c5-8ba1-4f90-85cf-dd619494a1de&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Jamandalley/laptop-requisition",
+    "accountId": "1360d2b2-1982-4a10-b575-ac765e5580fb"
   }
-}</component>
+}]]></component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IDepartmentService.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopService.cs" root0="FORCE_HIGHLIGHTING" />
@@ -85,14 +88,17 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "cidr.known.project.marker": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "develop",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "fix-develop",
     "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -194,10 +200,7 @@
       <workItem from="1780386570138" duration="9986000" />
       <workItem from="1780398502243" duration="51586000" />
       <workItem from="1780476307219" duration="15660000" />
-      <workItem from="1780582807072" duration="16947000" />
-      <workItem from="1780602500827" duration="9949000" />
-      <workItem from="1780651868037" duration="1966000" />
-      <workItem from="1780661810416" duration="305000" />
+      <workItem from="1780650531433" duration="1078000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -255,7 +258,23 @@
       <option name="project" value="LOCAL" />
       <updated>1780506349315</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="updates">
+      <option name="closed" value="true" />
+      <created>1780507165038</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1780507165038</updated>
+    </task>
+    <task id="LOCAL-00009" summary="updates">
+      <option name="closed" value="true" />
+      <created>1780651394887</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1780651394887</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -274,8 +293,7 @@
     <MESSAGE value="Auth and Business logic implementation" />
     <MESSAGE value="Added ConnectionStrings to appsettings.json" />
     <MESSAGE value="updates" />
-    <MESSAGE value="Add laptop assignments integration migration and change SslMode to preferred" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add laptop assignments integration migration and change SslMode to preferred" />
+    <option name="LAST_COMMIT_MESSAGE" value="updates" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

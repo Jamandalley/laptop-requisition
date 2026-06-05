@@ -15,7 +15,8 @@ using MySql.EntityFrameworkCore;
 using Refit;
 using LaptopRequisition.Application.Interfaces.SSO;
 using LaptopRequisition.Application.Interfaces.External;
-using LaptopRequisition.Application.Extensions; 
+using LaptopRequisition.Application.Extensions;
+using LaptopRequisition.WebAPI.Controllers;
 using LaptopRequisition.WebAPI.Services; 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -149,6 +150,7 @@ app.UseCors(x => x
     .AllowAnyHeader()
     .AllowCredentials());
 
+app.MapProfileEndpoint();
 app.UseAuthentication();
 app.UseAuthorization();
 

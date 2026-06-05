@@ -8,7 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs.Request; // Added for HistoryFilterDto
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
-using LaptopRequisition.Application.DTOs.Admin; // Added for AdminRequestFilterDto
+using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page; // Added for AdminRequestFilterDto
 
 namespace LaptopRequisition.Infrastructure.Repositories
 {

@@ -1,5 +1,6 @@
 using System; // Added for Guid
-using LaptopRequisition.Application.DTOs; // Added for PaginatedFilterDto
+using LaptopRequisition.Application.DTOs;
+using LaptopRequisition.Application.DTOs.Page; // Added for PaginatedFilterDto
 
 namespace LaptopRequisition.Application.DTOs.Admin
 {

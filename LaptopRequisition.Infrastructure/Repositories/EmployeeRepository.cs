@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs;
 using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page;
 using LaptopRequisition.Domain.Enums; // Added for LaptopStatus
 
 namespace LaptopRequisition.Infrastructure.Repositories
@@ -322,6 +323,98 @@ namespace LaptopRequisition.Infrastructure.Repositories
         {
             _context.Employees.Update(employee);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<PaginatedResultDto<Employee>> GetFilteredAsync(EmployeeFilterDto filter)
+        {
+            var query = _context.Employees
+                .Include(x => x.Department)
+                .Include(x => x.Role)
+                // .Include(x => x.Laptops).ThenInclude(a => a.Laptop)
+                .AsQueryable();
+
+            // -------------------------
+            // SEARCH
+            // -------------------------
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                var term = filter.SearchTerm.ToLower();
+
+                query = query.Where(x =>
+                    x.FullName.ToLower().Contains(term) ||
+                    x.Email.ToLower().Contains(term) ||
+                    x.StaffId.ToLower().Contains(term));
+            }
+
+            // -------------------------
+            // FILTERS
+            // -------------------------
+            if (filter.DepartmentId.HasValue)
+                query = query.Where(x => x.DepartmentId == filter.DepartmentId);
+
+            if (filter.RoleId.HasValue)
+                query = query.Where(x => x.RoleId == filter.RoleId);
+            
+            if (filter.IsVerified.HasValue)
+                query = query.Where(x => x.IsVerified == filter.IsVerified);
+
+            // if (filter.HasAssignedLaptop.HasValue)
+            // {
+            //     if (filter.HasAssignedLaptop.Value)
+            //     {
+            //         query = query.Where(e => e.Laptops.Any());
+            //     }
+            //     else
+            //     {
+            //         query = query.Where(e => !e.Laptops.Any());
+            //     }
+            // }
+
+            // -------------------------
+            // SORTING
+            // -------------------------
+            query = ApplySorting(query, filter.SortBy, filter.SortOrder);
+
+            // -------------------------
+            // COUNT (before pagination)
+            // -------------------------
+            var totalCount = await query.CountAsync();
+
+            // -------------------------
+            // PAGINATION
+            // -------------------------
+            var employees = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PaginatedResultDto<Employee>
+            {
+                PageNumber = filter.PageNumber,
+                PageSize = filter.PageSize,
+                TotalCount = totalCount,
+                Items = employees
+            };
+        }
+        
+        private IQueryable<Employee> ApplySorting(
+            IQueryable<Employee> query,
+            string? sortBy,
+            string? sortOrder)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                return query.OrderBy(x => x.FullName);
+
+            var isDesc = sortOrder?.ToLower() == "desc";
+
+            return sortBy.ToLower() switch
+            {
+                "fullname" => isDesc ? query.OrderByDescending(x => x.FullName) : query.OrderBy(x => x.FullName),
+                "email" => isDesc ? query.OrderByDescending(x => x.Email) : query.OrderBy(x => x.Email),
+                "staffid" => isDesc ? query.OrderByDescending(x => x.StaffId) : query.OrderBy(x => x.StaffId),
+                "createdat" => isDesc ? query.OrderByDescending(x => x.CreatedAt) : query.OrderBy(x => x.CreatedAt),
+                _ => query.OrderBy(x => x.FullName)
+            };
         }
     }
 }

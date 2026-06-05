@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Http; // Added for IFormFile and StatusCodes
 using System; // Added for Exception
 using LaptopRequisition.Application.DTOs.Admin; // Added for EmployeeFilterDto, AdminEmployeeResponseDto, BulkUploadResultDto, UpdateUserRoleDto, AdminCreateEmployeeDto
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
-using System.Collections.Generic; // Added for IEnumerable
+using System.Collections.Generic;
+using LaptopRequisition.Application.DTOs.Page; // Added for IEnumerable
 
 namespace LaptopRequisition.WebAPI.Controllers
 {

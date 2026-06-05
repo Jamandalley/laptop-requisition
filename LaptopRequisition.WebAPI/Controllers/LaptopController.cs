@@ -8,7 +8,8 @@ using System.Threading.Tasks; // Added for Task
 using Microsoft.AspNetCore.Http; // Added for StatusCodes
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
 using LaptopRequisition.Application.DTOs.Admin; // Added for BulkUploadResultDto
-using System.Security.Claims; // Added for Claims
+using System.Security.Claims;
+using LaptopRequisition.Application.DTOs.Page; // Added for Claims
 
 namespace LaptopRequisition.WebAPI.Controllers;
 

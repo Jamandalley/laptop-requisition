@@ -7,7 +7,8 @@ using System.Linq; // Added for LINQ
 using System.Threading.Tasks; // Added for Task
 using LaptopRequisition.Domain.Enums; // Added for LaptopStatus
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
-using LaptopRequisition.Application.DTOs.Laptop; // Added for LaptopFilterDto
+using LaptopRequisition.Application.DTOs.Laptop;
+using LaptopRequisition.Application.DTOs.Page; // Added for LaptopFilterDto
 
 namespace LaptopRequisition.Infrastructure.Repositories
 {

@@ -1,0 +1,12 @@
+{
+  "Success": "Operation completed successfully.",
+  "UnknownError": "An unexpected error occurred.",
+  "InvalidCredentials": "Username or password is incorrect.",
+  "Unauthorized": "You are not authorized.",
+  "ValidationError": "Validation failed.",
+  "MissingField": "Required field missing.",
+  "NotFound": "Resource not found.",
+  "AlreadyExists": "Resource already exists.",
+  "BadRequest": "Invalid Request",
+  "Conflict": "Request Conflict"
+}

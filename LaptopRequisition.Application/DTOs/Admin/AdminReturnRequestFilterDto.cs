@@ -1,5 +1,6 @@
 using LaptopRequisition.Domain.Enums; // Added for ReturnRequestStatus
-using System; // Added for Guid
+using System;
+using LaptopRequisition.Application.DTOs.Page; // Added for Guid
 
 namespace LaptopRequisition.Application.DTOs.Admin
 {

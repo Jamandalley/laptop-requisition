@@ -16,7 +16,8 @@ using System.IO; // Added for MemoryStream
 using System.ComponentModel.DataAnnotations; // Added for ValidationContext
 using System.Text.Json; // Added for JsonSerializer
 using System.Security.Claims; // Added for Claims
-using ClosedXML.Excel; // Added for ClosedXML
+using ClosedXML.Excel;
+using LaptopRequisition.Application.DTOs.Page; // Added for ClosedXML
 
 namespace LaptopRequisition.Application.Services;
 

@@ -3,7 +3,8 @@ using System; // Added for Guid
 using System.Collections.Generic; // Added for IEnumerable
 using System.Threading.Tasks; // Added for Task
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
-using LaptopRequisition.Application.DTOs.Admin; // Added for EmployeeFilterDto
+using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page; // Added for EmployeeFilterDto
 
 namespace LaptopRequisition.Application.Interfaces
 {
@@ -46,5 +47,7 @@ namespace LaptopRequisition.Application.Interfaces
 
         // New method for login attempt tracking
         Task UpdateLoginAttemptsAsync(Employee employee);
+        
+        Task<PaginatedResultDto<Employee>> GetFilteredAsync(EmployeeFilterDto filter);
     }
 }

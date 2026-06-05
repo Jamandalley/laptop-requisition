@@ -15,7 +15,8 @@ using System.Threading.Tasks;
 using System.IO;
 using LaptopRequisition.Application.DTOs.Request; // Added for RequestStatusDetailDto
 using ClosedXML.Excel; // Added for ClosedXML
-using LaptopRequisition.Application.DTOs.Admin; // Added for AdminRequestFilterDto
+using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page; // Added for AdminRequestFilterDto
 
 namespace LaptopRequisition.Application.Services
 {

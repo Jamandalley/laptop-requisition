@@ -3,7 +3,8 @@ using LaptopRequisition.Application.DTOs.Request; // Added
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using LaptopRequisition.Application.DTOs.Admin; // Added for AdminRequestFilterDto
+using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page; // Added for AdminRequestFilterDto
 
 namespace LaptopRequisition.Application.Interfaces
 {

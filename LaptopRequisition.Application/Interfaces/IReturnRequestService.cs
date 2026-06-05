@@ -2,7 +2,8 @@ using LaptopRequisition.Application.DTOs;
 using System; // Added for Guid
 using System.Collections.Generic; // Added for IEnumerable
 using System.Threading.Tasks; // Added for Task
-using LaptopRequisition.Application.DTOs.Admin; // Added for AdminReturnRequestFilterDto and ApproveReturnRequestDto
+using LaptopRequisition.Application.DTOs.Admin;
+using LaptopRequisition.Application.DTOs.Page; // Added for AdminReturnRequestFilterDto and ApproveReturnRequestDto
 
 namespace LaptopRequisition.Application.Interfaces
 {
