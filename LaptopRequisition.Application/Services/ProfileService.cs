@@ -9,6 +9,9 @@ using LaptopRequisition.Application.DTOs.Admin;
 using LaptopRequisition.Domain.Common;
 using LaptopRequisition.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using LaptopRequisition.Application.DTOs.Page;
+using System.Linq; // Added for LINQ operations
+using System.Collections.Generic; // Added for List<string>
 
 namespace LaptopRequisition.Application.Services;
 
@@ -23,42 +26,21 @@ public class ProfileService(
     // -------------------------
     public async Task<Response<ProfileDto>> GetProfileAsync(Guid employeeId)
     {
+        // FIX: Include LaptopAssignments when fetching employee
         var employee = await employeeRepository
-            .GetByIdWithDepartmentAndRoleAsync(employeeId);
+            .GetByIdWithDepartmentAndRoleAsync(employeeId, includeLaptopAssignments: true);
 
         if (employee == null)
         {
             return Response<ProfileDto>.Fail(
-                ResponseCode.BadRequest,
-                ["Employee not found"]);
+                ResponseCode.NotFound, // Changed to NotFound for single entity
+                new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
-        var department = await departmentRepository
-            .GetByIdAsync(employee.DepartmentId);
+        // Department is already included in GetByIdWithDepartmentAndRoleAsync
+        // var department = await departmentRepository.GetByIdAsync(employee.DepartmentId);
 
-        // var currentLaptop = employee.Laptops?
-        //     .OrderByDescending(x => x.AssignedDate)
-        //     .FirstOrDefault();
-
-        var dto = new ProfileDto
-        {
-            Id = employee.Id,
-            StaffId = employee.StaffId,
-            FullName = employee.FullName,
-            Email = employee.Email,
-            PhoneNumber = employee.PhoneNumber,
-            DepartmentId = employee.DepartmentId,
-            DepartmentName = department?.Name ?? "Unknown",
-            Role = employee.Role?.Name ?? "Unknown",
-            ProfilePictureUrl = employee.ProfilePictureUrl,
-            IsFirstLogin = employee.IsFirstLogin,
-
-            // optional enrichment (if added to DTO)
-            // AssignedLaptopId = currentLaptop?.LaptopId,
-            // AssignedLaptopSerialNumber = currentLaptop?.Laptop?.SerialNumber
-        };
-
-        return Response<ProfileDto>.Ok(dto);
+        return Response<ProfileDto>.Ok(Map(employee)); // Use the updated Map method
     }
 
     // -------------------------
@@ -66,31 +48,17 @@ public class ProfileService(
     // -------------------------
     public async Task<Response<PaginatedResultDto<ProfileDto>>> GetProfilesAsync(EmployeeFilterDto filter)
     {
-        var result = await employeeRepository.GetFilteredAsync(filter);
+        // FIX: Include LaptopAssignments when fetching employees
+        var paginatedEmployees = await employeeRepository.GetFilteredAsync(filter, includeLaptopAssignments: true);
 
-        var dtos = result.Items.Select(employee => new ProfileDto
-        {
-            Id = employee.Id,
-            StaffId = employee.StaffId,
-            FullName = employee.FullName,
-            Email = employee.Email,
-            PhoneNumber = employee.PhoneNumber,
-            DepartmentId = employee.DepartmentId,
-            DepartmentName = employee.Department?.Name ?? "Unknown",
-            Role = employee.Role?.Name ?? "Unknown",
-            ProfilePictureUrl = employee.ProfilePictureUrl,
-            IsFirstLogin = employee.IsFirstLogin,
-
-            // AssignedLaptopId = currentLaptop?.LaptopId,
-            // AssignedLaptopSerialNumber = currentLaptop?.Laptop?.SerialNumber
-        }).ToList();
+        var dtos = paginatedEmployees.Items.Select(Map).ToList(); // FIX: Access Items property
 
         return Response<PaginatedResultDto<ProfileDto>>.Ok(new PaginatedResultDto<ProfileDto>
         {
-            PageNumber = result.PageNumber,
-            PageSize = result.PageSize,
-            TotalCount = result.TotalCount,
-            Data = dtos
+            PageNumber = paginatedEmployees.PageNumber, // FIX: Use paginatedEmployees properties
+            PageSize = paginatedEmployees.PageSize,     // FIX: Use paginatedEmployees properties
+            TotalCount = paginatedEmployees.TotalCount, // FIX: Use paginatedEmployees properties
+            Items = dtos
         });
     }
 
@@ -103,7 +71,7 @@ public class ProfileService(
 
         if (employee == null)
         {
-            return Response.Fail(ResponseCode.BadRequest, ["Employee not found"]);
+            return Response.Fail(ResponseCode.NotFound, new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
         employee.FullName = dto.FullName;
@@ -124,7 +92,7 @@ public class ProfileService(
 
         if (employee == null)
         {
-            return Response<string>.Fail(ResponseCode.BadRequest, ["Employee not found"]);
+            return Response<string>.Fail(ResponseCode.NotFound, new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
         var uploadsFolder = Path.Combine(
@@ -164,7 +132,7 @@ public class ProfileService(
 
         if (employee == null)
         {
-            return Response.Fail(ResponseCode.BadRequest, ["Employee not found"]);
+            return Response.Fail(ResponseCode.NotFound, new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
         if (!string.IsNullOrEmpty(employee.ProfilePictureUrl))
@@ -191,11 +159,12 @@ public class ProfileService(
         return Response.Ok();
     }
     
+    // NEW: Updated Map method to include assigned laptop details
     private static ProfileDto Map(Employee employee)
     {
-        // var currentLaptop = employee.Laptops?
-        //     .OrderByDescending(x => x.AssignedDate)
-        //     .FirstOrDefault();
+        var currentAssignment = employee.LaptopAssignments?
+            .OrderByDescending(la => la.AssignedDate)
+            .FirstOrDefault();
 
         return new ProfileDto
         {
@@ -210,8 +179,12 @@ public class ProfileService(
             ProfilePictureUrl = employee.ProfilePictureUrl,
             IsFirstLogin = employee.IsFirstLogin,
 
-            // AssignedLaptopId = currentLaptop?.LaptopId,
-            // AssignedLaptopSerialNumber = currentLaptop?.Laptop?.SerialNumber
+            AssignedLaptopId = currentAssignment?.LaptopId,
+            AssignedLaptopSerialNumber = currentAssignment?.Laptop?.SerialNumber,
+            AssignedLaptopAssetTag = currentAssignment?.Laptop?.AssetTag,
+            AssignedLaptopBrand = currentAssignment?.Laptop?.Brand,
+            AssignedLaptopModel = currentAssignment?.Laptop?.Model,
+            AssignedLaptopDate = currentAssignment?.AssignedDate
         };
     }
 }

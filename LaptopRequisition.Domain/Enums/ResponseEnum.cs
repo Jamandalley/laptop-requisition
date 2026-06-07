@@ -4,6 +4,7 @@ public enum ResponseCode
 {
     Success = 0,
     UnknownError = 1,
+    OtpValidationFailed = 3, // NEW: Added for OTP specific failure
     BadRequest = 21,
     Conflict = 22,
 
@@ -29,7 +30,6 @@ public enum ProductTypeEx
     Investment = 5
 }
 public enum ProductStatus { Draft = 1, Active = 2, Closed = 3 }
-public enum RatePeriod { Annual = 1 }
 public enum InterestMethod { DailyBalance = 1, AverageDailyBalance = 2 }
 public enum CompoundingFrequency { None = 0, Daily = 1, Monthly = 2 }
 public enum PostingFrequency { Daily = 1, Monthly = 2 }

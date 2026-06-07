@@ -3,6 +3,7 @@ using System;
 using LaptopRequisition.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,13 +11,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LaptopRequisition.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604184230_LaptopAssignmentsIntegration")]
+    partial class LaptopAssignmentsIntegration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.27")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("LaptopRequisition.Domain.AuditLog", b =>
@@ -83,9 +86,9 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            CreatedAt = new DateTime(2026, 6, 6, 20, 56, 51, 798, DateTimeKind.Utc).AddTicks(6514),
+                            CreatedAt = new DateTime(2026, 6, 4, 18, 42, 27, 743, DateTimeKind.Utc).AddTicks(6093),
                             Name = "IT",
-                            UpdatedAt = new DateTime(2026, 6, 6, 20, 56, 51, 798, DateTimeKind.Utc).AddTicks(6517)
+                            UpdatedAt = new DateTime(2026, 6, 4, 18, 42, 27, 743, DateTimeKind.Utc).AddTicks(6097)
                         });
                 });
 
@@ -259,9 +262,6 @@ namespace LaptopRequisition.Infrastructure.Migrations
                     b.Property<Guid?>("LaptopId1")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("RequestId")
-                        .HasColumnType("char(36)");
-
                     b.HasKey("EmployeeId", "LaptopId");
 
                     b.HasIndex("EmployeeId1");
@@ -269,8 +269,6 @@ namespace LaptopRequisition.Infrastructure.Migrations
                     b.HasIndex("LaptopId");
 
                     b.HasIndex("LaptopId1");
-
-                    b.HasIndex("RequestId");
 
                     b.ToTable("LaptopAssignments");
                 });
@@ -341,6 +339,9 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("ApprovedRejectedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("AssignedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -463,18 +464,18 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 6, 6, 20, 56, 51, 798, DateTimeKind.Utc).AddTicks(8071),
+                            CreatedAt = new DateTime(2026, 6, 4, 18, 42, 27, 743, DateTimeKind.Utc).AddTicks(7643),
                             Description = "Administrator with full access",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 6, 20, 56, 51, 798, DateTimeKind.Utc).AddTicks(8072)
+                            UpdatedAt = new DateTime(2026, 6, 4, 18, 42, 27, 743, DateTimeKind.Utc).AddTicks(7644)
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 6, 6, 20, 56, 51, 798, DateTimeKind.Utc).AddTicks(8078),
+                            CreatedAt = new DateTime(2026, 6, 4, 18, 42, 27, 743, DateTimeKind.Utc).AddTicks(7652),
                             Description = "Standard employee with limited access",
                             Name = "Employee",
-                            UpdatedAt = new DateTime(2026, 6, 6, 20, 56, 51, 798, DateTimeKind.Utc).AddTicks(8078)
+                            UpdatedAt = new DateTime(2026, 6, 4, 18, 42, 27, 743, DateTimeKind.Utc).AddTicks(7653)
                         });
                 });
 
@@ -518,10 +519,6 @@ namespace LaptopRequisition.Infrastructure.Migrations
                     b.HasOne("LaptopRequisition.Domain.Laptop", null)
                         .WithMany("LaptopAssignments")
                         .HasForeignKey("LaptopId1");
-
-                    b.HasOne("LaptopRequisition.Domain.Request", null)
-                        .WithMany("LaptopAssignments")
-                        .HasForeignKey("RequestId");
 
                     b.Navigation("Employee");
 
@@ -604,11 +601,6 @@ namespace LaptopRequisition.Infrastructure.Migrations
                     b.Navigation("Requests");
 
                     b.Navigation("ReturnRequests");
-                });
-
-            modelBuilder.Entity("LaptopRequisition.Domain.Request", b =>
-                {
-                    b.Navigation("LaptopAssignments");
                 });
 
             modelBuilder.Entity("LaptopRequisition.Domain.Role", b =>

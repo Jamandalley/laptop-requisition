@@ -16,18 +16,21 @@ namespace LaptopRequisition.Application.Services
         private readonly ILaptopRepository _laptopRepository;
         private readonly INotificationRepository _notificationRepository;
         private readonly IReturnRequestRepository _returnRequestRepository; // Added
+        private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
 
         public DashboardService(IEmployeeRepository employeeRepository,
                                 IRequestRepository requestRepository,
                                 ILaptopRepository laptopRepository,
                                 INotificationRepository notificationRepository,
-                                IReturnRequestRepository returnRequestRepository) // Updated constructor
+                                IReturnRequestRepository returnRequestRepository,
+                                ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
         {
             _employeeRepository = employeeRepository;
             _requestRepository = requestRepository;
             _laptopRepository = laptopRepository;
             _notificationRepository = notificationRepository;
             _returnRequestRepository = returnRequestRepository; 
+            _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
         }
 
         public async Task<DashboardSummaryDto> GetEmployeeDashboardSummaryAsync(Guid employeeId)
@@ -39,7 +42,10 @@ namespace LaptopRequisition.Application.Services
             }
 
             var totalRequests = await _requestRepository.CountByEmployeeIdAsync(employeeId);
-            var currentLaptop = await _laptopRepository.GetAssignedLaptopByEmployeeIdAsync(employeeId);
+            // FIX: Get current laptop assignment from LaptopAssignmentRepository
+            var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
+            var currentLaptop = currentAssignment?.Laptop; // Extract the laptop from the assignment
+
             var currentActiveRequest = await _requestRepository.GetPendingOrApprovedRequestByEmployeeIdAsync(employeeId);
             var unreadNotificationsCount = await _notificationRepository.CountUnreadByEmployeeIdAsync(employeeId);
             var recentNotifications = (await _notificationRepository.GetRecentNotificationsByEmployeeIdAsync(employeeId, 4))
@@ -64,7 +70,7 @@ namespace LaptopRequisition.Application.Services
                 Storage = currentLaptop.Storage,
                 OperatingSystem = currentLaptop.OperatingSystem.ToString(), 
                 ScreenSize = currentLaptop.ScreenSize,
-                AssignedDate = currentLaptop.AssignedAt ?? DateTime.MinValue 
+                AssignedDate = currentAssignment?.AssignedDate ?? DateTime.MinValue // FIX: Use AssignedDate from LaptopAssignment
             } : null;
 
             var currentRequestStatusDto = new RequestStatusSummaryDto

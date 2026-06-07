@@ -22,6 +22,7 @@ namespace LaptopRequisition.Infrastructure
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<LaptopAssignments> LaptopAssignments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,21 +36,27 @@ namespace LaptopRequisition.Infrastructure
                 entity.HasIndex(e => e.Email).IsUnique();
 
                 entity.HasOne(e => e.Department)
-                      .WithMany(d => d.Employees)
-                      .HasForeignKey(e => e.DepartmentId);
+                    .WithMany(d => d.Employees)
+                    .HasForeignKey(e => e.DepartmentId);
 
                 entity.HasOne(e => e.Role)
-                      .WithMany(r => r.Employees)
-                      .HasForeignKey(e => e.RoleId);
+                    .WithMany(r => r.Employees)
+                    .HasForeignKey(e => e.RoleId);
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
+
+                // Configure relationship to LaptopAssignments
+                entity.HasMany(e => e.LaptopAssignments)
+                    .WithOne(la => la.Employee)
+                    .HasForeignKey(la => la.EmployeeId)
+                    .IsRequired(); // EmployeeId is non-nullable in LaptopAssignments
             });
 
             modelBuilder.Entity<Department>(entity =>
             {
                 entity.HasMany(d => d.Employees)
-                      .WithOne(e => e.Department)
-                      .HasForeignKey(e => e.DepartmentId);
+                    .WithOne(e => e.Department)
+                    .HasForeignKey(e => e.DepartmentId);
 
                 entity.Property(d => d.Name).HasMaxLength(255);
                 entity.HasIndex(d => d.Name).IsUnique();
@@ -95,7 +102,13 @@ namespace LaptopRequisition.Infrastructure
                 entity.Property(l => l.SerialNumber).HasMaxLength(255);
                 entity.HasIndex(l => l.SerialNumber).IsUnique();
                 entity.Property(l => l.Status)
-                      .HasConversion<string>();
+                    .HasConversion<string>();
+
+                // Configure relationship to LaptopAssignments
+                entity.HasMany(l => l.LaptopAssignments)
+                    .WithOne(la => la.Laptop)
+                    .HasForeignKey(la => la.LaptopId)
+                    .IsRequired(); // LaptopId is non-nullable in LaptopAssignments
             });
 
             modelBuilder.Entity<Request>(entity =>
@@ -103,33 +116,36 @@ namespace LaptopRequisition.Infrastructure
                 entity.HasIndex(r => r.EmployeeId);
                 entity.HasIndex(r => r.Status);
                 entity.Property(r => r.Status)
-                      .HasConversion<string>();
+                    .HasConversion<string>();
                 entity.HasOne(r => r.Employee)
-                      .WithMany(e => e.Requests)
-                      .HasForeignKey(r => r.EmployeeId);
+                    .WithMany(e => e.Requests)
+                    .HasForeignKey(r => r.EmployeeId);
 
                 entity.HasOne(r => r.Laptop)
-                      .WithMany(l => l.Requests)
-                      .HasForeignKey(r => r.LaptopId)
-                      .IsRequired(false)
-                      .OnDelete(DeleteBehavior.SetNull);
+                    .WithMany(l => l.Requests)
+                    .HasForeignKey(r => r.LaptopId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // FIX: Removed the incorrect LaptopAssignments navigation property from Request
+                // The Request entity does not have a direct collection of LaptopAssignments.
             });
 
             modelBuilder.Entity<ReturnRequest>(entity =>
             {
                 entity.HasOne(rr => rr.Employee)
-                      .WithMany(e => e.ReturnRequests)
-                      .HasForeignKey(rr => rr.EmployeeId);
+                    .WithMany(e => e.ReturnRequests)
+                    .HasForeignKey(rr => rr.EmployeeId);
                 entity.HasOne(rr => rr.Laptop)
-                      .WithMany(l => l.ReturnRequests)
-                      .HasForeignKey(rr => rr.LaptopId);
+                    .WithMany(l => l.ReturnRequests)
+                    .HasForeignKey(rr => rr.LaptopId);
             });
 
             modelBuilder.Entity<Notification>(entity =>
             {
                 entity.HasOne(n => n.Employee)
-                      .WithMany(e => e.Notifications)
-                      .HasForeignKey(n => n.EmployeeId);
+                    .WithMany(e => e.Notifications)
+                    .HasForeignKey(n => n.EmployeeId);
             });
 
             modelBuilder.Entity<PasswordResetToken>(entity =>
@@ -137,8 +153,26 @@ namespace LaptopRequisition.Infrastructure
                 entity.Property(prt => prt.Token).HasMaxLength(255);
                 entity.HasIndex(prt => prt.Token).IsUnique();
                 entity.HasOne(prt => prt.Employee)
-                      .WithMany(e => e.PasswordResetTokens)
-                      .HasForeignKey(prt => prt.EmployeeId);
+                    .WithMany(e => e.PasswordResetTokens)
+                    .HasForeignKey(prt => prt.EmployeeId);
+            });
+
+            // Configure LaptopAssignments entity
+            modelBuilder.Entity<LaptopAssignments>(entity =>
+            {
+                entity.HasKey(la => new { la.EmployeeId, la.LaptopId }); // Composite primary key
+
+                // Configure Employee relationship as optional on the dependent side
+                entity.HasOne(la => la.Employee)
+                    .WithMany(e => e.LaptopAssignments)
+                    .HasForeignKey(la => la.EmployeeId)
+                    .IsRequired(false); // FIX: Make relationship optional to handle global query filter
+
+                // Configure Laptop relationship as optional on the dependent side
+                entity.HasOne(la => la.Laptop)
+                    .WithMany(l => l.LaptopAssignments)
+                    .HasForeignKey(la => la.LaptopId)
+                    .IsRequired(false); // FIX: Make relationship optional to handle global query filter
             });
         }
 
@@ -157,7 +191,11 @@ namespace LaptopRequisition.Infrastructure
         private void AddAuditInfo()
         {
             var entries = ChangeTracker.Entries()
-                .Where(e => (e.Entity is Request || e.Entity is Employee || e.Entity is Department || e.Entity is Laptop || e.Entity is ReturnRequest || e.Entity is Role) && (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted));
+                .Where(e =>
+                    (e.Entity is Request || e.Entity is Employee || e.Entity is Department || e.Entity is Laptop ||
+                     e.Entity is ReturnRequest || e.Entity is Role) && (e.State == EntityState.Added ||
+                                                                        e.State == EntityState.Modified ||
+                                                                        e.State == EntityState.Deleted));
 
             foreach (var entry in entries)
             {
@@ -234,12 +272,10 @@ namespace LaptopRequisition.Infrastructure
                         role.CreatedAt = DateTime.UtcNow;
                         role.UpdatedAt = DateTime.UtcNow;
                     }
-                    else if (entry.State == EntityState.Modified)
-                    {
-                        role.UpdatedAt = DateTime.UtcNow;
-                    }
+
                 }
             }
         }
+
     }
-}
+}         

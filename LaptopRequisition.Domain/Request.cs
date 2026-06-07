@@ -1,5 +1,6 @@
 ﻿using LaptopRequisition.Domain.Enums;
 using System;
+using System.Collections.Generic; // NEW: Added for ICollection
 
 namespace LaptopRequisition.Domain
 {
@@ -31,7 +32,7 @@ namespace LaptopRequisition.Domain
 
         public DateTime? ApprovedRejectedAt { get; set; }
 
-        public DateTime? AssignedAt { get; set; }
+        // Removed: public DateTime? AssignedAt { get; set; }
 
         public bool IsDismissed { get; set; }
 
@@ -40,5 +41,7 @@ namespace LaptopRequisition.Domain
         public Employee? Employee { get; set; }
 
         public Laptop? Laptop { get; set; }
+
+        // Removed: public ICollection<LaptopAssignments>? LaptopAssignments { get; set; }
     }
 }

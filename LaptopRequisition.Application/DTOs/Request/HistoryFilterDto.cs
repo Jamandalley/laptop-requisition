@@ -1,15 +1,16 @@
 using System;
 using LaptopRequisition.Domain.Enums;
+using LaptopRequisition.Application.DTOs.Page; // NEW: Added for PaginatedFilterDto
 
 namespace LaptopRequisition.Application.DTOs.Request
 {
-    public class HistoryFilterDto
+    public class HistoryFilterDto : PaginatedFilterDto // FIX: Inherit from PaginatedFilterDto
     {
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public RequestStatus? Status { get; set; }
         public string? RequestType { get; set; } // "LaptopRequest" or "ReturnRequest"
-        public int PageNumber { get; set; } = 1;
-        public int PageSize { get; set; } = 10;
+        // Removed: PageNumber and PageSize as they are inherited from PaginatedFilterDto
+        // Removed: SortBy and SortOrder as they are inherited from PaginatedFilterDto
     }
 }

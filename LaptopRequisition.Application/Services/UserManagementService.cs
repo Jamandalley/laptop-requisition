@@ -2,11 +2,11 @@ using LaptopRequisition.Application.DTOs.Admin;
 using LaptopRequisition.Application.Interfaces;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
-using System.Linq;
+using System.Linq; // Ensure this is present
 using LaptopRequisition.Domain; // Added for Employee
 using System; // Added for Guid
 using System.Collections.Generic; // Added for List
-using LaptopRequisition.Application.DTOs.Request; // Added to resolve RequestHistoryDto
+using LaptopRequisition.Application.DTOs.Request; // Added to resolve RequestHistoryDto, HistoryFilterDto, and RequestFilterDto
 using LaptopRequisition.Application.DTOs.Laptop; // Added to resolve LaptopResponseDto
 using Microsoft.AspNetCore.Http; // Added for IFormFile
 using CsvHelper; // Added for CsvHelper
@@ -26,13 +26,15 @@ namespace LaptopRequisition.Application.Services
         private readonly IRoleRepository _roleRepository; // Added
         private readonly IRequestRepository _requestRepository; // Added
         private readonly IAuthService _authService; // Added for password reset
+        private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Injected LaptopAssignmentRepository
 
         public UserManagementService(IEmployeeRepository employeeRepository,
                                      ILaptopRepository laptopRepository,
                                      IDepartmentRepository departmentRepository,
                                      IRoleRepository roleRepository,
                                      IRequestRepository requestRepository,
-                                     IAuthService authService) // Updated constructor
+                                     IAuthService authService,
+                                     ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
         {
             _employeeRepository = employeeRepository;
             _laptopRepository = laptopRepository;
@@ -40,6 +42,7 @@ namespace LaptopRequisition.Application.Services
             _roleRepository = roleRepository;
             _requestRepository = requestRepository;
             _authService = authService;
+            _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
         }
 
         public async Task<UserManagementSummaryDto> GetUserManagementSummaryAsync()
@@ -62,6 +65,7 @@ namespace LaptopRequisition.Application.Services
 
         public async Task<PaginatedResultDto<AdminEmployeeResponseDto>> GetFilteredAndPaginatedEmployeesAsync(EmployeeFilterDto filter)
         {
+            // FIX: Ensure GetFilteredAndPaginatedEmployeesAsync includes LaptopAssignments
             var paginatedEmployees = await _employeeRepository.GetFilteredAndPaginatedEmployeesAsync(filter);
 
             var mappedItems = new List<AdminEmployeeResponseDto>();
@@ -81,7 +85,8 @@ namespace LaptopRequisition.Application.Services
                     IsLocked = employee.IsLocked,
                     IsVerified = employee.IsVerified,
                     IsFirstLogin = employee.IsFirstLogin,
-                    HasAssignedLaptop = await _laptopRepository.GetAssignedLaptopByEmployeeIdAsync(employee.Id) != null, // Check if employee has an assigned laptop
+                    // FIX: Check LaptopAssignments for HasAssignedLaptop
+                    HasAssignedLaptop = employee.LaptopAssignments != null && employee.LaptopAssignments.Any(), 
                     CreatedAt = employee.CreatedAt,
                     UpdatedAt = employee.UpdatedAt
                 });
@@ -98,15 +103,19 @@ namespace LaptopRequisition.Application.Services
 
         public async Task<AdminEmployeeProfileDto> GetEmployeeProfileForAdminAsync(Guid employeeId)
         {
-            // Use GetByIdIncludingDeletedAsync to allow viewing profile even if soft-deleted
+            // FIX: Ensure GetByIdIncludingDeletedAsync includes LaptopAssignments
             var employee = await _employeeRepository.GetByIdIncludingDeletedAsync(employeeId);
             if (employee == null)
             {
                 throw new InvalidOperationException("Employee not found.");
             }
 
-            var assignedLaptop = await _laptopRepository.GetAssignedLaptopByEmployeeIdAsync(employeeId);
-            var requestHistory = await _requestRepository.GetByEmployeeIdAsync(employeeId); // Get all requests for history
+            // FIX: Get assigned laptop from LaptopAssignments repository
+            var assignedLaptopAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
+
+            // FIX: Pass RequestFilterDto to GetByEmployeeIdAsync
+            var requestHistoryResponse = await _requestRepository.GetByEmployeeIdAsync(employeeId, new RequestFilterDto { PageNumber = 1, PageSize = 5, SortBy = "CreatedAt", SortOrder = "desc" }); // Get recent 5 requests for history
+            var requestHistory = requestHistoryResponse.Items; // Access Items from PaginatedResultDto
 
             var mappedHistory = requestHistory.Select(r => new RequestHistoryDto
             {
@@ -117,7 +126,7 @@ namespace LaptopRequisition.Application.Services
                 LaptopDetails = r.Laptop != null ? $"{r.Laptop.Brand} {r.Laptop.Model} (SN: {r.Laptop.SerialNumber})" : null,
                 Purpose = r.Purpose,
                 Notes = r.RejectionReason
-            }).OrderByDescending(h => h.Date).Take(5); // Take recent 5 for summary
+            }).ToList(); // FIX: Convert to List directly
 
             return new AdminEmployeeProfileDto
             {
@@ -136,21 +145,22 @@ namespace LaptopRequisition.Application.Services
                 ProfilePictureUrl = employee.ProfilePictureUrl,
                 CreatedAt = employee.CreatedAt,
                 UpdatedAt = employee.UpdatedAt,
-                AssignedLaptop = assignedLaptop != null ? new LaptopResponseDto // Use LaptopResponseDto
+                // FIX: Map AssignedLaptop from LaptopAssignments
+                AssignedLaptop = assignedLaptopAssignment != null ? new LaptopResponseDto 
                 {
-                    Id = assignedLaptop.Id,
-                    AssetTag = assignedLaptop.AssetTag,
-                    Brand = assignedLaptop.Brand,
-                    Model = assignedLaptop.Model,
-                    SerialNumber = assignedLaptop.SerialNumber,
-                    Processor = assignedLaptop.Processor,
-                    RAM = assignedLaptop.RAM,
-                    Storage = assignedLaptop.Storage,
-                    OperatingSystem = assignedLaptop.OperatingSystem,
-                    ScreenSize = assignedLaptop.ScreenSize,
-                    Status = assignedLaptop.Status,
-                    AssignedToEmployeeId = assignedLaptop.AssignedToEmployeeId,
-                    AssignedAt = assignedLaptop.AssignedAt
+                    Id = assignedLaptopAssignment.Laptop!.Id,
+                    AssetTag = assignedLaptopAssignment.Laptop.AssetTag,
+                    Brand = assignedLaptopAssignment.Laptop.Brand,
+                    Model = assignedLaptopAssignment.Laptop.Model,
+                    SerialNumber = assignedLaptopAssignment.Laptop.SerialNumber,
+                    Processor = assignedLaptopAssignment.Laptop.Processor,
+                    RAM = assignedLaptopAssignment.Laptop.RAM,
+                    Storage = assignedLaptopAssignment.Laptop.Storage,
+                    OperatingSystem = assignedLaptopAssignment.Laptop.OperatingSystem,
+                    ScreenSize = assignedLaptopAssignment.Laptop.ScreenSize,
+                    Status = assignedLaptopAssignment.Laptop.Status,
+                    AssignedToEmployeeId = assignedLaptopAssignment.EmployeeId,
+                    AssignedAt = assignedLaptopAssignment.AssignedDate
                 } : null,
                 RequestHistory = mappedHistory
             };
@@ -203,14 +213,19 @@ namespace LaptopRequisition.Application.Services
             await _employeeRepository.UpdateAsync(employee);
 
             // Re-fetch to ensure navigation properties are loaded for mapping
-            var updatedEmployee = await _employeeRepository.GetByIdIncludingDeletedAsync(employeeId);
+            // FIX: Ensure GetByIdWithDepartmentAndRoleAsync includes LaptopAssignments
+            var updatedEmployee = await _employeeRepository.GetByIdWithDepartmentAndRoleAsync(employeeId, includeLaptopAssignments: true);
             if (updatedEmployee == null)
             {
                 throw new InvalidOperationException("Updated employee not found after update operation.");
             }
 
-            var assignedLaptop = await _laptopRepository.GetAssignedLaptopByEmployeeIdAsync(employeeId);
-            var requestHistory = await _requestRepository.GetByEmployeeIdAsync(employeeId);
+            // FIX: Get assigned laptop from LaptopAssignments repository
+            var assignedLaptopAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
+
+            // FIX: Pass RequestFilterDto to GetByEmployeeIdAsync
+            var requestHistoryResponse = await _requestRepository.GetByEmployeeIdAsync(employeeId, new RequestFilterDto { PageNumber = 1, PageSize = 5, SortBy = "CreatedAt", SortOrder = "desc" });
+            var requestHistory = requestHistoryResponse.Items;
 
             var mappedHistory = requestHistory.Select(r => new RequestHistoryDto
             {
@@ -221,7 +236,7 @@ namespace LaptopRequisition.Application.Services
                 LaptopDetails = r.Laptop != null ? $"{r.Laptop.Brand} {r.Laptop.Model} (SN: {r.Laptop.SerialNumber})" : null,
                 Purpose = r.Purpose,
                 Notes = r.RejectionReason
-            }).OrderByDescending(h => h.Date).Take(5);
+            }).ToList(); // FIX: Convert to List directly
 
             return new AdminEmployeeProfileDto
             {
@@ -240,21 +255,22 @@ namespace LaptopRequisition.Application.Services
                 ProfilePictureUrl = updatedEmployee.ProfilePictureUrl,
                 CreatedAt = updatedEmployee.CreatedAt,
                 UpdatedAt = updatedEmployee.UpdatedAt,
-                AssignedLaptop = assignedLaptop != null ? new LaptopResponseDto // Use LaptopResponseDto
+                // FIX: Map AssignedLaptop from LaptopAssignments
+                AssignedLaptop = assignedLaptopAssignment != null ? new LaptopResponseDto
                 {
-                    Id = assignedLaptop.Id,
-                    AssetTag = assignedLaptop.AssetTag,
-                    Brand = assignedLaptop.Brand,
-                    Model = assignedLaptop.Model,
-                    SerialNumber = assignedLaptop.SerialNumber,
-                    Processor = assignedLaptop.Processor,
-                    RAM = assignedLaptop.RAM,
-                    Storage = assignedLaptop.Storage,
-                    OperatingSystem = assignedLaptop.OperatingSystem,
-                    ScreenSize = assignedLaptop.ScreenSize,
-                    Status = assignedLaptop.Status,
-                    AssignedToEmployeeId = assignedLaptop.AssignedToEmployeeId,
-                    AssignedAt = assignedLaptop.AssignedAt
+                    Id = assignedLaptopAssignment.Laptop!.Id,
+                    AssetTag = assignedLaptopAssignment.Laptop.AssetTag,
+                    Brand = assignedLaptopAssignment.Laptop.Brand,
+                    Model = assignedLaptopAssignment.Laptop.Model,
+                    SerialNumber = assignedLaptopAssignment.Laptop.SerialNumber,
+                    Processor = assignedLaptopAssignment.Laptop.Processor,
+                    RAM = assignedLaptopAssignment.Laptop.RAM,
+                    Storage = assignedLaptopAssignment.Laptop.Storage,
+                    OperatingSystem = assignedLaptopAssignment.Laptop.OperatingSystem,
+                    ScreenSize = assignedLaptopAssignment.Laptop.ScreenSize,
+                    Status = assignedLaptopAssignment.Laptop.Status,
+                    AssignedToEmployeeId = assignedLaptopAssignment.EmployeeId,
+                    AssignedAt = assignedLaptopAssignment.AssignedDate
                 } : null,
                 RequestHistory = mappedHistory
             };
@@ -321,9 +337,9 @@ namespace LaptopRequisition.Application.Services
                 throw new InvalidOperationException("Employee account is already soft-deleted.");
             }
 
-            // Check if the employee has any assigned laptops
-            var assignedLaptop = await _laptopRepository.GetAssignedLaptopByEmployeeIdAsync(employeeId);
-            if (assignedLaptop != null)
+            // FIX: Check if the employee has any assigned laptops via LaptopAssignments repository
+            var hasAssignedLaptop = await _laptopAssignmentRepository.AnyAssignmentForEmployeeAsync(employeeId);
+            if (hasAssignedLaptop)
             {
                 throw new InvalidOperationException("Cannot soft-delete an employee with an assigned laptop. Please unassign the laptop first.");
             }
@@ -357,6 +373,7 @@ namespace LaptopRequisition.Application.Services
 
         public async Task<IEnumerable<AdminEmployeeResponseDto>> GetDeletedEmployeesAsync()
         {
+            // FIX: Ensure GetDeletedEmployeesAsync includes LaptopAssignments
             var deletedEmployees = await _employeeRepository.GetDeletedEmployeesAsync();
 
             var mappedItems = new List<AdminEmployeeResponseDto>();
@@ -376,7 +393,8 @@ namespace LaptopRequisition.Application.Services
                     IsLocked = employee.IsLocked,
                     IsVerified = employee.IsVerified,
                     IsFirstLogin = employee.IsFirstLogin,
-                    HasAssignedLaptop = await _laptopRepository.GetAssignedLaptopByEmployeeIdAsync(employee.Id) != null, // Check if employee has an assigned laptop
+                    // FIX: Check LaptopAssignments for HasAssignedLaptop
+                    HasAssignedLaptop = employee.LaptopAssignments != null && employee.LaptopAssignments.Any(), 
                     CreatedAt = employee.CreatedAt,
                     UpdatedAt = employee.UpdatedAt
                 });
@@ -616,11 +634,6 @@ namespace LaptopRequisition.Application.Services
         {
             Map(m => m.StaffId).Name("StaffId");
             Map(m => m.FullName).Name("FullName");
-            Map(m => m.Email).Name("Email");
-            Map(m => m.PhoneNumber).Name("PhoneNumber");
-            Map(m => m.DepartmentName).Name("DepartmentName");
-            Map(m => m.RoleName).Name("RoleName");
-            Map(m => m.Password).Name("Password");
         }
     }
 }

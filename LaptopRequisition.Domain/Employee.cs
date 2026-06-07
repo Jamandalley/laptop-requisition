@@ -30,7 +30,7 @@ public class Employee
     public Department Department { get; set; } = null!;
 
     public ICollection<Request> Requests { get; set; } = new List<Request>();
-    // public ICollection<LaptopAssignments> Laptops { get; set; } = new List<LaptopAssignments>();
+    public ICollection<LaptopAssignments> LaptopAssignments { get; set; } = new List<LaptopAssignments>(); // NEW: Added LaptopAssignments navigation property
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     public ICollection<ReturnRequest> ReturnRequests { get; set; } = new List<ReturnRequest>();
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();

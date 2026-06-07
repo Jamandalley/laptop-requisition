@@ -16,8 +16,9 @@ using Refit;
 using LaptopRequisition.Application.Interfaces.SSO;
 using LaptopRequisition.Application.Interfaces.External;
 using LaptopRequisition.Application.Extensions;
-using LaptopRequisition.WebAPI.Controllers;
+using LaptopRequisition.WebAPI.Controllers; // Keep this for other controllers
 using LaptopRequisition.WebAPI.Services; 
+using LaptopRequisition.WebAPI.Endpoints; // NEW: Added for RequestEndpoints, ReturnRequestEndpoints, and DepartmentEndpoints
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +49,7 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>(); 
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>(); 
+builder.Services.AddScoped<ILaptopAssignmentRepository, LaptopAssignmentRepository>(); // NEW: Register LaptopAssignmentRepository
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -150,10 +152,14 @@ app.UseCors(x => x
     .AllowAnyHeader()
     .AllowCredentials());
 
-app.MapProfileEndpoint();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapProfileEndpoint();
+app.MapRequestEndpoints(); // NEW: Register RequestEndpoints
+app.MapReturnRequestEndpoints(); // NEW: Register ReturnRequestEndpoints
+app.MapDepartmentEndpoints(); // NEW: Register DepartmentEndpoints
+
+app.MapControllers(); // This will map any remaining MVC controllers
 
 app.Run();

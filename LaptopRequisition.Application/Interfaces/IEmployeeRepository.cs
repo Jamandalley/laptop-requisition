@@ -20,7 +20,8 @@ namespace LaptopRequisition.Application.Interfaces
         Task SoftDeleteAsync(Guid employeeId); 
         
         Task<Employee?> GetByEmailWithDepartmentAndRoleAsync(string email);
-        Task<Employee?> GetByIdWithDepartmentAndRoleAsync(Guid employeeId);
+        // Modified to include LaptopAssignments and Laptop
+        Task<Employee?> GetByIdWithDepartmentAndRoleAsync(Guid employeeId, bool includeLaptopAssignments = false);
         Task<int> CountAllAsync();
         
         Task<int> CountActiveUsersAsync();
@@ -48,6 +49,7 @@ namespace LaptopRequisition.Application.Interfaces
         // New method for login attempt tracking
         Task UpdateLoginAttemptsAsync(Employee employee);
         
-        Task<PaginatedResultDto<Employee>> GetFilteredAsync(EmployeeFilterDto filter);
+        // Modified to include LaptopAssignments and Laptop
+        Task<PaginatedResultDto<Employee>> GetFilteredAsync(EmployeeFilterDto filter, bool includeLaptopAssignments = false);
     }
 }

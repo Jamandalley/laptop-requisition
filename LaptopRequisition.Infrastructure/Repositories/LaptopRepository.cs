@@ -58,16 +58,23 @@ namespace LaptopRequisition.Infrastructure.Repositories
             var laptop = await _context.Laptops.FindAsync(id);
             if (laptop != null)
             {
+                // Also delete any associated LaptopAssignments
+                var assignments = await _context.LaptopAssignments.Where(la => la.LaptopId == id).ToListAsync();
+                _context.LaptopAssignments.RemoveRange(assignments);
+
                 _context.Laptops.Remove(laptop);
                 await _context.SaveChangesAsync();
             }
         }
 
-        // New method for DashboardService
+        // FIX: Updated to query LaptopAssignments
         public async Task<Laptop?> GetAssignedLaptopByEmployeeIdAsync(Guid employeeId)
         {
-            return await _context.Laptops
-                .FirstOrDefaultAsync(l => l.AssignedToEmployeeId == employeeId && l.Status == LaptopStatus.Assigned); // Updated check
+            return await _context.LaptopAssignments
+                                 .Where(la => la.EmployeeId == employeeId)
+                                 .OrderByDescending(la => la.AssignedDate) // Get the most recent assignment
+                                 .Select(la => la.Laptop)
+                                 .FirstOrDefaultAsync();
         }
 
         // New methods for Admin Dashboard
@@ -78,20 +85,24 @@ namespace LaptopRequisition.Infrastructure.Repositories
 
         public async Task<int> CountAvailableAsync()
         {
-            return await _context.Laptops.CountAsync(l => l.Status == LaptopStatus.Available); // Updated check
+            // FIX: Check if laptop has no current assignment
+            return await _context.Laptops
+                                 .Where(l => !_context.LaptopAssignments.Any(la => la.LaptopId == l.Id))
+                                 .CountAsync();
         }
 
         public async Task<int> CountByStatusAsync(LaptopStatus status) // New method
         {
+            // This method needs careful re-evaluation as LaptopStatus is now managed by LaptopAssignments
+            // For now, assuming status refers to the Laptop's own status property, not assignment status
             return await _context.Laptops.CountAsync(l => l.Status == status);
         }
 
-        // New method for User Management Summary
+        // FIX: Updated to query LaptopAssignments
         public async Task<List<Guid>> GetAllAssignedToEmployeeIdsAsync()
         {
-            return await _context.Laptops
-                                 .Where(l => l.AssignedToEmployeeId != null)
-                                 .Select(l => l.AssignedToEmployeeId!.Value) // Select the non-null Guid
+            return await _context.LaptopAssignments
+                                 .Select(la => la.EmployeeId)
                                  .Distinct()
                                  .ToListAsync();
         }
@@ -99,7 +110,12 @@ namespace LaptopRequisition.Infrastructure.Repositories
         // New method for filtered and paginated laptops
         public async Task<PaginatedResultDto<Laptop>> GetFilteredAndPaginatedLaptopsAsync(LaptopFilterDto filter)
         {
-            IQueryable<Laptop> query = _context.Laptops.Include(l => l.AssignedToEmployee); // Include assigned employee for potential filtering/sorting
+            IQueryable<Laptop> query = _context.Laptops
+                                                 .AsQueryable();
+
+            // Include LaptopAssignments and Employee for filtering/sorting
+            query = query.Include(l => l.LaptopAssignments)
+                         .ThenInclude(la => la.Employee);
 
             // Apply search term
             if (!string.IsNullOrEmpty(filter.SearchTerm))
@@ -108,7 +124,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
                                          l.Brand.Contains(filter.SearchTerm) ||
                                          l.Model.Contains(filter.SearchTerm) ||
                                          l.SerialNumber.Contains(filter.SearchTerm) ||
-                                         (l.AssignedToEmployee != null && l.AssignedToEmployee.FullName.Contains(filter.SearchTerm)));
+                                         l.LaptopAssignments.Any(la => la.Employee!.FullName.Contains(filter.SearchTerm))); // FIX: Use LaptopAssignments for employee search
             }
 
             // Apply Brand filter
@@ -134,18 +150,18 @@ namespace LaptopRequisition.Infrastructure.Repositories
             {
                 if (filter.IsAssigned.Value)
                 {
-                    query = query.Where(l => l.AssignedToEmployeeId != null);
+                    query = query.Where(l => l.LaptopAssignments.Any()); // FIX: Check LaptopAssignments
                 }
                 else
                 {
-                    query = query.Where(l => l.AssignedToEmployeeId == null);
+                    query = query.Where(l => !l.LaptopAssignments.Any()); // FIX: Check LaptopAssignments
                 }
             }
 
             // Apply AssignedToEmployeeId filter
             if (filter.AssignedToEmployeeId.HasValue)
             {
-                query = query.Where(l => l.AssignedToEmployeeId == filter.AssignedToEmployeeId.Value);
+                query = query.Where(l => l.LaptopAssignments.Any(la => la.EmployeeId == filter.AssignedToEmployeeId.Value)); // FIX: Check LaptopAssignments
             }
 
             // Sorting (add default or specific sorting if needed)
@@ -170,7 +186,10 @@ namespace LaptopRequisition.Infrastructure.Repositories
                         query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(l => l.Status) : query.OrderBy(l => l.Status);
                         break;
                     case "assignedtoemployeename":
-                        query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(l => l.AssignedToEmployee!.FullName) : query.OrderBy(l => l.AssignedToEmployee!.FullName);
+                        // FIX: Sort by the FullName of the employee in the most recent assignment
+                        query = filter.SortOrder?.ToLower() == "desc" 
+                            ? query.OrderByDescending(l => l.LaptopAssignments.OrderByDescending(la => la.AssignedDate).FirstOrDefault()!.Employee!.FullName) 
+                            : query.OrderBy(l => l.LaptopAssignments.OrderByDescending(la => la.AssignedDate).FirstOrDefault()!.Employee!.FullName);
                         break;
                     case "createdat":
                         query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(l => l.CreatedAt) : query.OrderBy(l => l.CreatedAt);
@@ -200,11 +219,14 @@ namespace LaptopRequisition.Infrastructure.Repositories
             };
         }
 
-        // New method to get any assigned laptop for an employee
+        // FIX: Updated to query LaptopAssignments
         public async Task<Laptop?> GetAnyAssignedLaptopByEmployeeIdAsync(Guid employeeId)
         {
-            return await _context.Laptops
-                                 .FirstOrDefaultAsync(l => l.AssignedToEmployeeId == employeeId && l.Status == LaptopStatus.Assigned);
+            return await _context.LaptopAssignments
+                                 .Where(la => la.EmployeeId == employeeId)
+                                 .OrderByDescending(la => la.AssignedDate) // Get the most recent assignment
+                                 .Select(la => la.Laptop)
+                                 .FirstOrDefaultAsync();
         }
     }
 }

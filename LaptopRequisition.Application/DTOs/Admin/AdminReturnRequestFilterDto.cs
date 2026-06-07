@@ -6,7 +6,7 @@ namespace LaptopRequisition.Application.DTOs.Admin
 {
     public class AdminReturnRequestFilterDto : PaginatedFilterDto
     {
-        public string? SearchTerm { get; set; } // Search by employee name, staff ID, laptop serial number
+        // Removed: public string? SearchTerm { get; set; } // SearchTerm is now inherited from PaginatedFilterDto
         public ReturnRequestStatus? Status { get; set; }
         public Guid? EmployeeId { get; set; }
         public Guid? DepartmentId { get; set; }
