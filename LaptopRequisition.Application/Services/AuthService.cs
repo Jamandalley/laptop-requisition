@@ -27,7 +27,7 @@ namespace LaptopRequisition.Application.Services
         private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
         private readonly IDepartmentRepository _departmentRepository;
         private readonly ISsoClient _ssoClient;
-        private readonly IAdminSsoClient _adminSsoClient; // NEW: Injected IAdminSsoClient
+        // Removed: private readonly IAdminSsoClient _adminSsoClient; // Removed
         private readonly SsoSettings _ssoSettings;
         private readonly IOtpHelperService _otpHelperService;
         private readonly INotificationApi _notificationApi;
@@ -39,7 +39,7 @@ namespace LaptopRequisition.Application.Services
                            IPasswordResetTokenRepository passwordResetTokenRepository,
                            IDepartmentRepository departmentRepository,
                            ISsoClient ssoClient,
-                           IAdminSsoClient adminSsoClient, // NEW: Added to constructor
+                           // Removed: IAdminSsoClient adminSsoClient, // Removed from constructor
                            IOptions<SsoSettings> ssoSettingsOptions,
                            IOtpHelperService otpHelperService,
                            INotificationApi notificationApi,
@@ -51,7 +51,7 @@ namespace LaptopRequisition.Application.Services
             _passwordResetTokenRepository = passwordResetTokenRepository;
             _departmentRepository = departmentRepository;
             _ssoClient = ssoClient;
-            _adminSsoClient = adminSsoClient; // NEW: Initialized
+            // Removed: _adminSsoClient = adminSsoClient; // Removed
             _ssoSettings = ssoSettingsOptions.Value;
             _otpHelperService = otpHelperService;
             _notificationApi = notificationApi;
@@ -223,40 +223,30 @@ namespace LaptopRequisition.Application.Services
                 var sourceIdClaimValue = jwtToken.Claims
                     .FirstOrDefault(c => c.Type == "SourceId")
                     ?.Value;
-                var ssoFullName = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                var ssoFullName = jwtToken.Claims.FirstOrDefault(c => c.Type == "Us_FullName")?.Value; // FIX: Use Us_FullName claim
                 
-                if (sourceIdClaimValue == null || !Guid.TryParse(sourceIdClaimValue, out Guid employeeId))
+                Guid employeeId;
+                if (sourceIdClaimValue == null || !Guid.TryParse(sourceIdClaimValue, out employeeId))
                 {
-                    throw new InvalidOperationException("SSO token does not contain a valid user ID.");
+                    // If SourceId is not a GUID (e.g., for super admin or other SSO-only users),
+                    // try to use 'sub' claim as a fallback for a unique identifier.
+                    // This might not be a GUID, so we'll store it as a string in EmployeeDto.Id for SSO-only users.
+                    var subClaimValue = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+                    if (subClaimValue != null && Guid.TryParse(subClaimValue, out employeeId))
+                    {
+                        // It's a GUID, use it
+                    }
+                    else
+                    {
+                        // Not a GUID, or null. Assign Guid.Empty and handle as SSO-only user without local GUID.
+                        employeeId = Guid.Empty;
+                    }
                 }
 
                 // Extract roles from SSO token (Keycloak specific claims)
                 var ssoRoles = new List<string>();
-                var realmAccessClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "realm_access");
-                if (realmAccessClaim != null)
-                {
-                    using (JsonDocument doc = JsonDocument.Parse(realmAccessClaim.Value))
-                    {
-                        if (doc.RootElement.TryGetProperty("roles", out JsonElement rolesElement) && rolesElement.ValueKind == JsonValueKind.Array)
-                        {
-                            ssoRoles.AddRange(rolesElement.EnumerateArray().Select(r => r.GetString() ?? string.Empty));
-                        }
-                    }
-                }
-                var resourceAccessClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "resource_access");
-                if (resourceAccessClaim != null)
-                {
-                    using (JsonDocument doc = JsonDocument.Parse(resourceAccessClaim.Value))
-                    {
-                        foreach (var clientProperty in doc.RootElement.EnumerateObject())
-                        {
-                            if (clientProperty.Value.TryGetProperty("roles", out JsonElement rolesElement) && rolesElement.ValueKind == JsonValueKind.Array)
-                            {
-                                ssoRoles.AddRange(rolesElement.EnumerateArray().Select(r => r.GetString() ?? string.Empty));
-                            }
-                        }
-                    }
-                }
+                var roleClaims = jwtToken.Claims.Where(c => c.Type == "role").Select(c => c.Value).ToList(); // FIX: Get all role claims
+                ssoRoles.AddRange(roleClaims);
                 
                 // --- Local Employee Handling ---
                 // Try to find local employee by SSO ID (which is now the Employee.Id)
@@ -267,7 +257,19 @@ namespace LaptopRequisition.Application.Services
                     // Existing local employee: apply local checks
                     response.EmployeeDetails = MapEmployeeToDto(employee);
                     response.IsFirstLogin = employee.IsFirstLogin;
-                    response.IsAdmin = (employee.Role?.Name == "Admin"); // Use local role
+                    response.IsAdmin = (employee.Role?.Name == "Admin" || employee.Role?.Name == "Super Admin"); // Use local role
+
+                    // --- NEW: Role Synchronization ---
+                    var highestSsoRole = await GetHighestRoleFromSso(ssoRoles);
+                    if (highestSsoRole != null && employee.Role?.Id != highestSsoRole.Id) // Compare by ID
+                    {
+                        employee.RoleId = highestSsoRole.Id;
+                        employee.Role = highestSsoRole; // Update navigation property for immediate use
+                        await _employeeRepository.UpdateAsync(employee);
+                        response.EmployeeDetails.Role = highestSsoRole.Name; // Update DTO
+                        response.IsAdmin = (highestSsoRole.Name == "REQUISITION_PORTAL_ADMIN" || highestSsoRole.Name == "Super Admin"); // Update IsAdmin based on new role
+                    }
+                    // --- END NEW ---
 
                     if (employee.IsLocked)
                     {
@@ -307,34 +309,20 @@ namespace LaptopRequisition.Application.Services
                 }
                 else
                 {
-                    // SSO-only user (e.g. Super Admin)
-                    // Resolve ambiguity for Guid.TryParse
-                    var actualSsoUserIdString = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value as string;
-
+                    // SSO-only user (e.g. Super Admin or other roles not locally managed)
                     response.EmployeeDetails = new EmployeeDto
                     {
-                        Id = actualSsoUserIdString != null && Guid.TryParse(actualSsoUserIdString, out var adminId)
-                            ? adminId
-                            : Guid.Empty,
-
+                        Id = employeeId, // Use the parsed GUID or Guid.Empty
                         Email = ssoUserEmail,
                         FullName = ssoFullName ?? ssoUserEmail,
-
                         DepartmentName = "SSO Managed",
-
-                        StaffId = actualSsoUserIdString != null
-                            ? "SSO-" + actualSsoUserIdString.Substring(0, 8)
-                            : "SSO-ADMIN",
-
-                        Role = ssoRoles.Contains("admin")
-                            ? "Admin"
-                            : "Employee",
-
+                        StaffId = ssoUsername, // Use the SSO username (GUID or email)
+                        Role = ssoRoles.Contains("REQUISITION_PORTAL_ADMIN") || ssoRoles.Contains("Super Admin") ? "Admin" : "Employee", // Determine role based on SSO roles
                         IsLocked = false,
                         IsFirstLogin = false
                     };
 
-                    response.IsAdmin = ssoRoles.Contains("admin");
+                    response.IsAdmin = ssoRoles.Contains("REQUISITION_PORTAL_ADMIN") || ssoRoles.Contains("Super Admin");
                     response.IsFirstLogin = false;
                 }
             }
@@ -380,101 +368,6 @@ namespace LaptopRequisition.Application.Services
             }
             
             return response;
-        }
-
-        public async Task<LoginResponseDto> AdminLoginAsync(string email, string password)
-        {
-            var loginResponse = new LoginResponseDto { IsSuccess = false };
-            SsoLoginResponseRootDto ssoLoginRootResponse; // Declare here to be accessible outside try block
-
-            try
-            {
-                var ssoLoginRequest = new SsoLoginRequestDto
-                {
-                    Username = email,
-                    Password = password
-                };
-
-                // Changed to use _adminSsoClient
-                ssoLoginRootResponse = await _adminSsoClient.LoginSsoUser(ssoLoginRequest);
-            }
-            catch (ApiException ex)
-            {
-                Console.WriteLine($"[SSO Admin Login Debug] ApiException caught. Status: {ex.StatusCode}, Content: {ex.Content}");
-
-                // NEW: Handle ApiException with OK status code (Refit deserialization issue)
-                if (ex.StatusCode == System.Net.HttpStatusCode.OK && !string.IsNullOrEmpty(ex.Content))
-                {
-                    try
-                    {
-                        // Attempt manual deserialization
-                        ssoLoginRootResponse = JsonSerializer.Deserialize<SsoLoginResponseRootDto>(ex.Content);
-                        // If successful, we can proceed with the rest of the logic outside this catch block
-                    }
-                    catch (JsonException jsonEx)
-                    {
-                        Console.WriteLine($"[SSO Admin Login Debug] Manual JSON deserialization failed: {jsonEx.Message}");
-                        loginResponse.Message = $"Failed to process SSO response: {jsonEx.Message}";
-                        return loginResponse; // Return failure if manual deserialization fails
-                    }
-                }
-                else
-                {
-                    // For other API exceptions (non-OK status codes), treat as a failure
-                    loginResponse.Message = $"Failed to authenticate with SSO system for Admin. Status: {ex.StatusCode}. Message: {ex.Content}";
-                    return loginResponse;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SSO Admin Login Debug] Unexpected Exception: {ex.Message}");
-                loginResponse.Message = $"An unexpected error occurred during SSO Admin authentication: {ex.Message}";
-                return loginResponse;
-            }
-
-            // Original logic to process ssoLoginRootResponse (now guaranteed to be populated if no hard errors)
-            if (!ssoLoginRootResponse.IsSuccessful || ssoLoginRootResponse.Data == null)
-            {
-                loginResponse.Message = ssoLoginRootResponse.Message ?? "SSO Admin login failed.";
-                return loginResponse;
-            }
-
-            var ssoTokenDetails = ssoLoginRootResponse.Data.TokenDetails;
-            var ssoProfile = ssoLoginRootResponse.Data.Profile;
-
-            loginResponse.IsSuccess = true;
-            loginResponse.Message = ssoLoginRootResponse.Message;
-            loginResponse.TokenDetails = ssoTokenDetails;
-
-            // Map SSO Profile to EmployeeDto
-            loginResponse.EmployeeDetails = new EmployeeDto
-            {
-                // Resolve ambiguity for Guid.TryParse
-                Id = Guid.TryParse(ssoProfile.Id as string, out var profileId) ? profileId : Guid.Empty,
-                StaffId = ssoProfile.Id, // Using SSO ID as StaffId for SSO-managed users
-                FullName = $"{ssoProfile.FirstName} {ssoProfile.LastName}",
-                Email = ssoProfile.Email,
-                PhoneNumber = ssoProfile.PhoneNumber,
-                // FIX: Use Guid.TryParse for DepartmentId
-                DepartmentId = Guid.TryParse(ssoProfile.DepartmentId, out Guid parsedDepartmentId) ? parsedDepartmentId : Guid.Empty,
-                DepartmentName = "SSO Managed", // Or fetch from local DB if departmentId maps
-                Role = ssoProfile.Roles.Contains("REQUISITION_PORTAL_ADMIN") || ssoProfile.Roles.Contains("Super Admin") ? "Admin" : "Employee", // Determine role based on SSO roles
-                IsLocked = ssoProfile.Status != "Active",
-                IsFirstLogin = false // Assuming SSO admin users are not first-time logins
-            };
-
-            // Check for Admin role based on the provided sample roles
-            loginResponse.IsAdmin = ssoProfile.Roles.Contains("REQUISITION_PORTAL_ADMIN") || ssoProfile.Roles.Contains("Super Admin");
-
-            if (!loginResponse.IsAdmin)
-            {
-                loginResponse.IsSuccess = false;
-                loginResponse.Message = "Access denied. Only administrators can log in to the Admin Portal.";
-                loginResponse.TokenDetails = new SsoTokenDetailsDto(); // Clear token if not admin
-                loginResponse.EmployeeDetails = new EmployeeDto(); // Clear employee details
-            }
-            
-            return loginResponse;
         }
 
         public async Task VerifyAccountAsync(string validationReference, string otp)
@@ -656,6 +549,28 @@ namespace LaptopRequisition.Application.Services
             };
         }
 
+        // NEW: Helper method to get the highest role from SSO claims that matches a local role
+        private async Task<Role?> GetHighestRoleFromSso(List<string> ssoRoles)
+        {
+            var allLocalRoles = await _roleRepository.GetAllAsync(); // Assuming this method exists and returns all roles
+
+            // Prioritize specific admin roles
+            if (ssoRoles.Contains("Super Admin"))
+            {
+                return allLocalRoles.FirstOrDefault(r => r.Name == "Super Admin");
+            }
+            if (ssoRoles.Contains("REQUISITION_PORTAL_ADMIN"))
+            {
+                return allLocalRoles.FirstOrDefault(r => r.Name == "REQUISITION_PORTAL_ADMIN");
+            }
+            if (ssoRoles.Contains("Admin")) // Generic admin role if it exists in SSO
+            {
+                return allLocalRoles.FirstOrDefault(r => r.Name == "Admin");
+            }
+            
+            // Default to Employee role if no higher role is found
+            return allLocalRoles.FirstOrDefault(r => r.Name == "Employee");
+        }
         
         private async Task<string> BuildPasswordResetEmailBodyAsync(string resetLink, string employeeName)
         {

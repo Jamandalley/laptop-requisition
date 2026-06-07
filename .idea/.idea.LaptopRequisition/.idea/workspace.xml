@@ -19,8 +19,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/DepartmentEndpoints.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/DepartmentEndpoints.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAuthService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAuthService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminAuthController.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AuthController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AuthController.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -209,7 +211,7 @@
       <workItem from="1780476307219" duration="15660000" />
       <workItem from="1780650531433" duration="1078000" />
       <workItem from="1780796167102" duration="1864000" />
-      <workItem from="1780824449295" duration="3349000" />
+      <workItem from="1780824449295" duration="10251000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -283,7 +285,15 @@
       <option name="project" value="LOCAL" />
       <updated>1780651394887</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Removed Authentication for the Get DepartmentEndpoints">
+      <option name="closed" value="true" />
+      <created>1780832034453</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1780832034453</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -303,7 +313,8 @@
     <MESSAGE value="Added ConnectionStrings to appsettings.json" />
     <MESSAGE value="updates" />
     <MESSAGE value="Changed Profile,Request,RetunrRequest and Department to minimal APIs and Response&lt;T&gt; responses with Pagination&amp;Filtering implementations &amp; Removed AssignedAt property from Request and Added LaptopAssignmentNav" />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed Profile,Request,RetunrRequest and Department to minimal APIs and Response&lt;T&gt; responses with Pagination&amp;Filtering implementations &amp; Removed AssignedAt property from Request and Added LaptopAssignmentNav" />
+    <MESSAGE value="Removed Authentication for the Get DepartmentEndpoints" />
+    <option name="LAST_COMMIT_MESSAGE" value="Removed Authentication for the Get DepartmentEndpoints" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
