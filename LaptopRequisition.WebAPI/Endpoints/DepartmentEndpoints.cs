@@ -20,71 +20,72 @@ namespace LaptopRequisition.WebAPI.Endpoints
         {
             // Admin-only endpoints
             app.MapPost("/api/admin/departments", async (
-                [FromServices] IDepartmentService departmentService,
-                [FromBody] CreateDepartmentDto dto) =>
-            {
-                var response = await departmentService.CreateDepartmentAsync(dto);
-                return response.IsSuccessful
-                    ? Results.CreatedAtRoute("GetDepartmentByIdRoute", new { id = response.Data?.Id }, response.Data)
-                    : MapResponseToIResult(response);
-            })
-            .RequireAuthorization(policy => policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin"))
-            .WithTags("Departments")
-            .WithOpenApi();
+                    [FromServices] IDepartmentService departmentService,
+                    [FromBody] CreateDepartmentDto dto) =>
+                {
+                    var response = await departmentService.CreateDepartmentAsync(dto);
+                    return response.IsSuccessful
+                        ? Results.CreatedAtRoute("GetDepartmentByIdRoute", new { id = response.Data?.Id },
+                            response.Data)
+                        : MapResponseToIResult(response);
+                })
+                .RequireAuthorization(policy => policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin"))
+                .WithTags("Departments")
+                .WithOpenApi();
 
             app.MapPut("/api/admin/departments/{id}", async (
-                Guid id,
-                [FromServices] IDepartmentService departmentService,
-                [FromBody] UpdateDepartmentDto dto) =>
-            {
-                var response = await departmentService.UpdateDepartmentAsync(id, dto);
-                return response.IsSuccessful
-                    ? Results.Ok(response.Data)
-                    : MapResponseToIResult(response);
-            })
-            .RequireAuthorization(policy => policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin"))
-            .WithTags("Departments")
-            .WithOpenApi();
+                    Guid id,
+                    [FromServices] IDepartmentService departmentService,
+                    [FromBody] UpdateDepartmentDto dto) =>
+                {
+                    var response = await departmentService.UpdateDepartmentAsync(id, dto);
+                    return response.IsSuccessful
+                        ? Results.Ok(response.Data)
+                        : MapResponseToIResult(response);
+                })
+                .RequireAuthorization(policy => policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin"))
+                .WithTags("Departments")
+                .WithOpenApi();
 
             app.MapDelete("/api/admin/departments/{id}", async (
-                Guid id,
-                [FromServices] IDepartmentService departmentService) =>
-            {
-                var response = await departmentService.DeleteDepartmentAsync(id);
-                return response.IsSuccessful
-                    ? Results.NoContent()
-                    : MapResponseToIResult(response);
-            })
-            .RequireAuthorization(policy => policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin"))
-            .WithTags("Departments")
-            .WithOpenApi();
+                    Guid id,
+                    [FromServices] IDepartmentService departmentService) =>
+                {
+                    var response = await departmentService.DeleteDepartmentAsync(id);
+                    return response.IsSuccessful
+                        ? Results.NoContent()
+                        : MapResponseToIResult(response);
+                })
+                .RequireAuthorization(policy => policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin"))
+                .WithTags("Departments")
+                .WithOpenApi();
 
-            // Authenticated-only endpoints (open to all authenticated users)
+            // Publicly accessible GET endpoints
             app.MapGet("/api/departments", async (
-                [FromServices] IDepartmentService departmentService) =>
-            {
-                var response = await departmentService.GetAllDepartmentsAsync();
-                return response.IsSuccessful
-                    ? Results.Ok(response.Data)
-                    : MapResponseToIResult(response);
-            })
-            .RequireAuthorization() // Any authenticated user
-            .WithTags("Departments")
-            .WithOpenApi();
+                    [FromServices] IDepartmentService departmentService) =>
+                {
+                    var response = await departmentService.GetAllDepartmentsAsync();
+                    return response.IsSuccessful
+                        ? Results.Ok(response.Data)
+                        : MapResponseToIResult(response);
+                })
+                // Removed: .RequireAuthorization() // No authorization required
+                .WithTags("Departments")
+                .WithOpenApi();
 
             app.MapGet("/api/departments/{id}", async (
-                Guid id,
-                [FromServices] IDepartmentService departmentService) =>
-            {
-                var response = await departmentService.GetDepartmentByIdAsync(id);
-                return response.IsSuccessful
-                    ? Results.Ok(response.Data)
-                    : MapResponseToIResult(response);
-            })
-            .WithName("GetDepartmentByIdRoute") // Named for CreatedAtRoute
-            .RequireAuthorization() // Any authenticated user
-            .WithTags("Departments")
-            .WithOpenApi();
+                    Guid id,
+                    [FromServices] IDepartmentService departmentService) =>
+                {
+                    var response = await departmentService.GetDepartmentByIdAsync(id);
+                    return response.IsSuccessful
+                        ? Results.Ok(response.Data)
+                        : MapResponseToIResult(response);
+                })
+                .WithName("GetDepartmentByIdRoute") // Named for CreatedAtRoute
+                // Removed: .RequireAuthorization() // No authorization required
+                .WithTags("Departments")
+                .WithOpenApi();
 
             return app;
         }
@@ -94,9 +95,12 @@ namespace LaptopRequisition.WebAPI.Endpoints
         {
             return response.Code switch // FIX: Changed from response.ResponseCode to response.Code
             {
-                LaptopRequisition.Domain.Enums.ResponseCode.NotFound => Results.NotFound(new { message = response.Message }), // FIX: Fully qualified
-                LaptopRequisition.Domain.Enums.ResponseCode.BadRequest => Results.BadRequest(new { message = response.Message }), // FIX: Fully qualified
-                LaptopRequisition.Domain.Enums.ResponseCode.Unauthorized => Results.Unauthorized(), // FIX: Fully qualified
+                LaptopRequisition.Domain.Enums.ResponseCode.NotFound => Results.NotFound(new
+                    { message = response.Message }), // FIX: Fully qualified
+                LaptopRequisition.Domain.Enums.ResponseCode.BadRequest => Results.BadRequest(new
+                    { message = response.Message }), // FIX: Fully qualified
+                LaptopRequisition.Domain.Enums.ResponseCode
+                    .Unauthorized => Results.Unauthorized(), // FIX: Fully qualified
                 LaptopRequisition.Domain.Enums.ResponseCode.Forbidden => Results.Forbid(), // FIX: Fully qualified
                 _ => Results.Problem(response.Message)
             };
@@ -107,9 +111,12 @@ namespace LaptopRequisition.WebAPI.Endpoints
         {
             return response.Code switch // FIX: Changed from response.ResponseCode to response.Code
             {
-                LaptopRequisition.Domain.Enums.ResponseCode.NotFound => Results.NotFound(new { message = response.Message }), // FIX: Fully qualified
-                LaptopRequisition.Domain.Enums.ResponseCode.BadRequest => Results.BadRequest(new { message = response.Message }), // FIX: Fully qualified
-                LaptopRequisition.Domain.Enums.ResponseCode.Unauthorized => Results.Unauthorized(), // FIX: Fully qualified
+                LaptopRequisition.Domain.Enums.ResponseCode.NotFound => Results.NotFound(new
+                    { message = response.Message }), // FIX: Fully qualified
+                LaptopRequisition.Domain.Enums.ResponseCode.BadRequest => Results.BadRequest(new
+                    { message = response.Message }), // FIX: Fully qualified
+                LaptopRequisition.Domain.Enums.ResponseCode
+                    .Unauthorized => Results.Unauthorized(), // FIX: Fully qualified
                 LaptopRequisition.Domain.Enums.ResponseCode.Forbidden => Results.Forbid(), // FIX: Fully qualified
                 _ => Results.Problem(response.Message)
             };

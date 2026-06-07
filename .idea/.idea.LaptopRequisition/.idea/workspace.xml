@@ -20,8 +20,7 @@
   <component name="ChangeListManager">
     <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.Development.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.Development.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/DepartmentEndpoints.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/DepartmentEndpoints.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,9 +32,14 @@
     <option name="firstShow" value="false" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="62" />
+    <option name="cachedIndexableFilesCount" value="61" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="rollback-version" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -44,12 +48,12 @@
     &quot;assignee&quot;: &quot;adebow&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Jamandalley/laptop-requisition",
-    "accountId": "1360d2b2-1982-4a10-b575-ac765e5580fb"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Jamandalley/laptop-requisition.git&quot;,
+    &quot;accountId&quot;: &quot;e96576c5-8ba1-4f90-85cf-dd619494a1de&quot;
   }
-}]]></component>
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IDepartmentService.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopService.cs" root0="FORCE_HIGHLIGHTING" />
@@ -65,6 +69,9 @@
     <urls />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8,
   &quot;fromUser&quot;: false
@@ -74,34 +81,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    ".NET Launch Settings Profile.LaptopRequisition: IIS Express.executor": "Run",
-    ".NET Launch Settings Profile.LaptopRequisition: http.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "cidr.known.project.marker": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "fix-develop",
-    "ignore.virus.scanning.warn.message": "true",
-    "junie.onboarding.icon.badge.shown": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Launch Settings Profile.LaptopRequisition: IIS Express.executor&quot;: &quot;Run&quot;,
+    &quot;.NET Launch Settings Profile.LaptopRequisition: http.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected=".NET Launch Settings Profile.LaptopRequisition: http">
     <configuration name="LaptopRequisition.WebAPI" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="" />
@@ -201,6 +208,8 @@
       <workItem from="1780398502243" duration="51586000" />
       <workItem from="1780476307219" duration="15660000" />
       <workItem from="1780650531433" duration="1078000" />
+      <workItem from="1780796167102" duration="1864000" />
+      <workItem from="1780824449295" duration="3349000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -293,7 +302,8 @@
     <MESSAGE value="Auth and Business logic implementation" />
     <MESSAGE value="Added ConnectionStrings to appsettings.json" />
     <MESSAGE value="updates" />
-    <option name="LAST_COMMIT_MESSAGE" value="updates" />
+    <MESSAGE value="Changed Profile,Request,RetunrRequest and Department to minimal APIs and Response&lt;T&gt; responses with Pagination&amp;Filtering implementations &amp; Removed AssignedAt property from Request and Added LaptopAssignmentNav" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed Profile,Request,RetunrRequest and Department to minimal APIs and Response&lt;T&gt; responses with Pagination&amp;Filtering implementations &amp; Removed AssignedAt property from Request and Added LaptopAssignmentNav" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
