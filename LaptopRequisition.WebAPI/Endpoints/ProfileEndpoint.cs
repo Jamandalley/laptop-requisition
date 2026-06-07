@@ -1,17 +1,13 @@
-using LaptopRequisition.Application.DTOs.Employee;
-using LaptopRequisition.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Security.Claims;
-using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs.Admin;
-using System.Linq; // Added for LINQ operations
-
-namespace LaptopRequisition.WebAPI.Controllers;
-
+using LaptopRequisition.Application.DTOs.Employee;
+using LaptopRequisition.Application.Extensions;
+using LaptopRequisition.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+// Added for LINQ operations
+
+// NEW: Added for ClaimsPrincipalExtensions
+
+namespace LaptopRequisition.WebAPI.Endpoints;
 
 public static class ProfileEndpoint
 {
@@ -56,7 +52,7 @@ public static class ProfileEndpoint
             {
                 try
                 {
-                    var employeeId = GetCurrentEmployeeId(context);
+                    var employeeId = context.User.GetEmployeeId(); // FIX: Use extension method
                     var profile = await service.GetProfileAsync(employeeId);
                     return Results.Ok(profile);
                 }
@@ -87,7 +83,7 @@ public static class ProfileEndpoint
             {
                 try
                 {
-                    var employeeId = GetCurrentEmployeeId(context);
+                    var employeeId = context.User.GetEmployeeId(); // FIX: Use extension method
                     await service.UpdateProfileAsync(employeeId, request);
                     return Results.NoContent();
                 }
@@ -118,7 +114,7 @@ public static class ProfileEndpoint
             {
                 try
                 {
-                    var employeeId = GetCurrentEmployeeId(context);
+                    var employeeId = context.User.GetEmployeeId(); // FIX: Use extension method
                     var imageUrl = await service.UploadProfilePictureAsync(employeeId, file);
                     return Results.Ok(new { imageUrl });
                 }
@@ -148,7 +144,7 @@ public static class ProfileEndpoint
             {
                 try
                 {
-                    var employeeId = GetCurrentEmployeeId(context);
+                    var employeeId = context.User.GetEmployeeId(); // FIX: Use extension method
                     await service.RemoveProfilePictureAsync(employeeId);
                     return Results.NoContent();
                 }
@@ -207,16 +203,16 @@ public static class ProfileEndpoint
     }
 
     // -------------------------
-    // Helper
+    // Helper (Removed - now using extension method)
     // -------------------------
-    private static Guid GetCurrentEmployeeId(HttpContext context)
-    {
-        var employeeId = context.User.FindFirst("SourceId")?.Value;
+    // private static Guid GetCurrentEmployeeId(HttpContext context)
+    // {
+    //     var employeeId = context.User.FindFirst("SourceId")?.Value;
 
-        if (string.IsNullOrEmpty(employeeId))
-            throw new UnauthorizedAccessException(
-                "User not authenticated or employee ID not found in token.");
+    //     if (string.IsNullOrEmpty(employeeId))
+    //         throw new UnauthorizedAccessException(
+    //             "User not authenticated or employee ID not found in token.");
 
-        return Guid.Parse(employeeId);
-    }
+    //     return Guid.Parse(employeeId);
+    // }
 }

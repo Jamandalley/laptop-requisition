@@ -2,11 +2,11 @@ using LaptopRequisition.Application.DTOs.Admin;
 using LaptopRequisition.Application.Interfaces;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
-using System.Linq;
+using System.Linq; // Ensure this is present
 using LaptopRequisition.Domain; // Added for Employee
 using System; // Added for Guid
 using System.Collections.Generic; // Added for List
-using LaptopRequisition.Application.DTOs.Request; // Added to resolve RequestHistoryDto
+using LaptopRequisition.Application.DTOs.Request; // Added to resolve RequestHistoryDto, HistoryFilterDto, and RequestFilterDto
 using LaptopRequisition.Application.DTOs.Laptop; // Added to resolve LaptopResponseDto
 using Microsoft.AspNetCore.Http; // Added for IFormFile
 using CsvHelper; // Added for CsvHelper
@@ -113,7 +113,9 @@ namespace LaptopRequisition.Application.Services
             // FIX: Get assigned laptop from LaptopAssignments repository
             var assignedLaptopAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
 
-            var requestHistory = await _requestRepository.GetByEmployeeIdAsync(employeeId); // Get all requests for history
+            // FIX: Pass RequestFilterDto to GetByEmployeeIdAsync
+            var requestHistoryResponse = await _requestRepository.GetByEmployeeIdAsync(employeeId, new RequestFilterDto { PageNumber = 1, PageSize = 5, SortBy = "CreatedAt", SortOrder = "desc" }); // Get recent 5 requests for history
+            var requestHistory = requestHistoryResponse.Items; // Access Items from PaginatedResultDto
 
             var mappedHistory = requestHistory.Select(r => new RequestHistoryDto
             {
@@ -124,7 +126,7 @@ namespace LaptopRequisition.Application.Services
                 LaptopDetails = r.Laptop != null ? $"{r.Laptop.Brand} {r.Laptop.Model} (SN: {r.Laptop.SerialNumber})" : null,
                 Purpose = r.Purpose,
                 Notes = r.RejectionReason
-            }).OrderByDescending(h => h.Date).Take(5); // Take recent 5 for summary
+            }).ToList(); // FIX: Convert to List directly
 
             return new AdminEmployeeProfileDto
             {
@@ -221,7 +223,9 @@ namespace LaptopRequisition.Application.Services
             // FIX: Get assigned laptop from LaptopAssignments repository
             var assignedLaptopAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
 
-            var requestHistory = await _requestRepository.GetByEmployeeIdAsync(employeeId);
+            // FIX: Pass RequestFilterDto to GetByEmployeeIdAsync
+            var requestHistoryResponse = await _requestRepository.GetByEmployeeIdAsync(employeeId, new RequestFilterDto { PageNumber = 1, PageSize = 5, SortBy = "CreatedAt", SortOrder = "desc" });
+            var requestHistory = requestHistoryResponse.Items;
 
             var mappedHistory = requestHistory.Select(r => new RequestHistoryDto
             {
@@ -232,7 +236,7 @@ namespace LaptopRequisition.Application.Services
                 LaptopDetails = r.Laptop != null ? $"{r.Laptop.Brand} {r.Laptop.Model} (SN: {r.Laptop.SerialNumber})" : null,
                 Purpose = r.Purpose,
                 Notes = r.RejectionReason
-            }).OrderByDescending(h => h.Date).Take(5);
+            }).ToList(); // FIX: Convert to List directly
 
             return new AdminEmployeeProfileDto
             {

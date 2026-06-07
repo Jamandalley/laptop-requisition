@@ -34,32 +34,21 @@ namespace LaptopRequisition.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<ReturnRequest?> GetByIdAsync(Guid id)
+        public async Task<ReturnRequest?> GetByIdAsync(Guid id, bool includeRelatedEntities = false) // Updated signature
         {
-            return await _context.ReturnRequests
-                                 .Include(rr => rr.Employee) // Include Employee for mapping
-                                 .Include(rr => rr.Laptop)   // Include Laptop for mapping
-                                 .FirstOrDefaultAsync(rr => rr.Id == id);
+            IQueryable<ReturnRequest> query = _context.ReturnRequests;
+
+            if (includeRelatedEntities)
+            {
+                query = query.Include(rr => rr.Employee)
+                             .Include(rr => rr.Laptop);
+            }
+
+            return await query.FirstOrDefaultAsync(rr => rr.Id == id);
         }
 
-        public async Task<IEnumerable<ReturnRequest>> GetByEmployeeIdAsync(Guid employeeId)
-        {
-            return await _context.ReturnRequests
-                                 .Where(rr => rr.EmployeeId == employeeId)
-                                 .Include(rr => rr.Employee)
-                                 .Include(rr => rr.Laptop)
-                                 .OrderByDescending(rr => rr.CreatedAt)
-                                 .ToListAsync();
-        }
-
-        public async Task<IEnumerable<ReturnRequest>> GetAllAsync()
-        {
-            return await _context.ReturnRequests
-                                 .Include(rr => rr.Employee)
-                                 .Include(rr => rr.Laptop)
-                                 .OrderByDescending(rr => rr.CreatedAt)
-                                 .ToListAsync();
-        }
+        // Removed: Task<IEnumerable<ReturnRequest>> GetByEmployeeIdAsync(Guid employeeId) // Replaced by paginated version
+        // Removed: Task<IEnumerable<ReturnRequest>> GetAllAsync(); // Replaced by GetFilteredAndPaginatedReturnRequestsAsync
 
         public async Task DeleteAsync(Guid id)
         {
@@ -91,7 +80,8 @@ namespace LaptopRequisition.Infrastructure.Repositories
             IQueryable<ReturnRequest> query = _context.ReturnRequests
                 .Where(rr => rr.EmployeeId == employeeId)
                 .Include(rr => rr.Laptop)
-                .Include(rr => rr.Employee);
+                .Include(rr => rr.Employee)
+                .AsQueryable();
             
             if (filter.StartDate.HasValue)
             {
@@ -105,10 +95,22 @@ namespace LaptopRequisition.Infrastructure.Repositories
             {
                 query = query.Where(rr => rr.Status == filter.Status.Value.ToString());
             }
-            
-            query = query.OrderByDescending(rr => rr.CreatedAt);
+            // Apply search term from base PaginatedFilterDto
+            if (!string.IsNullOrEmpty(filter.SearchTerm))
+            {
+                var searchTermLower = filter.SearchTerm.ToLower();
+                query = query.Where(rr =>
+                    (rr.Employee != null &&
+                        (rr.Employee.FullName.ToLower().Contains(searchTermLower) ||
+                         rr.Employee.StaffId.ToLower().Contains(searchTermLower) ||
+                         rr.Employee.Email.ToLower().Contains(searchTermLower))) ||
+                    (rr.Laptop != null && rr.Laptop.SerialNumber.ToLower().Contains(searchTermLower)) ||
+                    rr.Reason.ToLower().Contains(searchTermLower));
+            }
 
-             var totalCount = await query.CountAsync();
+            query = ApplySorting(query, filter.SortBy, filter.SortOrder); // Apply sorting
+
+            var totalCount = await query.CountAsync();
 
             var items = await query
                 .Skip((filter.PageNumber - 1) * filter.PageSize)
@@ -137,15 +139,23 @@ namespace LaptopRequisition.Infrastructure.Repositories
         {
             IQueryable<ReturnRequest> query = _context.ReturnRequests
                 .Include(rr => rr.Employee)
-                .Include(rr => rr.Laptop);
+                .ThenInclude(e => e.Department) // Include Department for Employee
+                .Include(rr => rr.Employee)
+                .ThenInclude(e => e.Role) // Include Role for Employee
+                .Include(rr => rr.Laptop)
+                .AsQueryable();
 
             // Apply filters
             if (!string.IsNullOrEmpty(filter.SearchTerm))
             {
-                query = query.Where(rr => rr.Employee != null &&
-                                         (rr.Employee.FullName.Contains(filter.SearchTerm) ||
-                                          rr.Employee.StaffId.Contains(filter.SearchTerm) ||
-                                          rr.Laptop != null && rr.Laptop.SerialNumber.Contains(filter.SearchTerm)));
+                var searchTermLower = filter.SearchTerm.ToLower();
+                query = query.Where(rr =>
+                    (rr.Employee != null &&
+                        (rr.Employee.FullName.ToLower().Contains(searchTermLower) ||
+                         rr.Employee.StaffId.ToLower().Contains(searchTermLower) ||
+                         rr.Employee.Email.ToLower().Contains(searchTermLower))) ||
+                    (rr.Laptop != null && rr.Laptop.SerialNumber.ToLower().Contains(searchTermLower)) ||
+                    rr.Reason.ToLower().Contains(searchTermLower));
             }
 
             if (filter.Status.HasValue)
@@ -163,6 +173,11 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 query = query.Where(rr => rr.Employee != null && rr.Employee.DepartmentId == filter.DepartmentId.Value);
             }
 
+            if (filter.LaptopId.HasValue)
+            {
+                query = query.Where(rr => rr.LaptopId == filter.LaptopId.Value);
+            }
+
             if (filter.StartDate.HasValue)
             {
                 query = query.Where(rr => rr.CreatedAt >= filter.StartDate.Value);
@@ -174,28 +189,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
             }
 
             // Apply sorting
-            if (!string.IsNullOrEmpty(filter.SortBy))
-            {
-                switch (filter.SortBy.ToLower())
-                {
-                    case "createdat":
-                        query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(rr => rr.CreatedAt) : query.OrderBy(rr => rr.CreatedAt);
-                        break;
-                    case "employeename":
-                        query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(rr => rr.Employee!.FullName) : query.OrderBy(rr => rr.Employee!.FullName);
-                        break;
-                    case "status":
-                        query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(rr => rr.Status) : query.OrderBy(rr => rr.Status);
-                        break;
-                    default:
-                        query = query.OrderByDescending(rr => rr.CreatedAt); // Default sort
-                        break;
-                }
-            }
-            else
-            {
-                query = query.OrderByDescending(rr => rr.CreatedAt); // Default sort
-            }
+            query = ApplySorting(query, filter.SortBy, filter.SortOrder);
 
             var totalCount = await query.CountAsync();
 
@@ -210,6 +204,25 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 TotalCount = totalCount,
                 PageNumber = filter.PageNumber,
                 PageSize = filter.PageSize
+            };
+        }
+
+        private IQueryable<ReturnRequest> ApplySorting(
+            IQueryable<ReturnRequest> query,
+            string? sortBy,
+            string? sortOrder)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                return query.OrderByDescending(rr => rr.CreatedAt);
+
+            var isDesc = sortOrder?.ToLower() == "desc";
+
+            return sortBy.ToLower() switch
+            {
+                "createdat" => isDesc ? query.OrderByDescending(rr => rr.CreatedAt) : query.OrderBy(rr => rr.CreatedAt),
+                "employeename" => isDesc ? query.OrderByDescending(rr => rr.Employee!.FullName) : query.OrderBy(rr => rr.Employee!.FullName),
+                "status" => isDesc ? query.OrderByDescending(rr => rr.Status) : query.OrderBy(rr => rr.Status),
+                _ => query.OrderByDescending(rr => rr.CreatedAt) // Default sort
             };
         }
     }

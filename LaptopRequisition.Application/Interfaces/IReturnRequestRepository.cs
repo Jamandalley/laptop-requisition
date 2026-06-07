@@ -13,20 +13,21 @@ namespace LaptopRequisition.Application.Interfaces
     {
         Task AddAsync(ReturnRequest returnRequest);
         Task UpdateAsync(ReturnRequest returnRequest);
-        Task<ReturnRequest?> GetByIdAsync(Guid id);
-        Task<IEnumerable<ReturnRequest>> GetByEmployeeIdAsync(Guid employeeId);
-        Task<IEnumerable<ReturnRequest>> GetAllAsync();
+        Task<ReturnRequest?> GetByIdAsync(Guid id, bool includeRelatedEntities = false); // FIX: Added includeRelatedEntities
+        // Removed: Task<IEnumerable<ReturnRequest>> GetByEmployeeIdAsync(Guid employeeId); // Replaced by paginated version
+        // Removed: Task<IEnumerable<ReturnRequest>> GetAllAsync(); // Replaced by GetFilteredAndPaginatedReturnRequestsAsync
         Task DeleteAsync(Guid id);
         Task<ReturnRequest?> GetPendingReturnRequestByLaptopIdAsync(Guid laptopId); // Existing method
 
         // New methods for History
+        // FIX: Modified GetEmployeeReturnRequestsAsync to include pagination and filtering
         Task<PaginatedResultDto<ReturnRequest>> GetEmployeeReturnRequestsAsync(Guid employeeId, HistoryFilterDto filter);
         Task<ReturnRequest?> GetReturnRequestWithLaptopAndEmployeeAsync(Guid returnRequestId);
 
         // New method for DashboardService
         Task<ReturnRequest?> GetPendingReturnRequestByEmployeeIdAsync(Guid employeeId); // Added
 
-        // New method for Admin Request Management
+        // New method for Admin Request Management (used for reporting now)
         Task<PaginatedResultDto<ReturnRequest>> GetFilteredAndPaginatedReturnRequestsAsync(AdminReturnRequestFilterDto filter);
     }
 }

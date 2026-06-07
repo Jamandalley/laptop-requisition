@@ -6,10 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using LaptopRequisition.Application.DTOs.Request; // Added for HistoryFilterDto
-using LaptopRequisition.Application.DTOs; // Added for PaginatedResultDto
+using LaptopRequisition.Application.DTOs.Request;
+using LaptopRequisition.Application.DTOs;
 using LaptopRequisition.Application.DTOs.Admin;
-using LaptopRequisition.Application.DTOs.Page; // Added for AdminRequestFilterDto
+using LaptopRequisition.Application.DTOs.Page;
 
 namespace LaptopRequisition.Infrastructure.Repositories
 {
@@ -28,31 +28,79 @@ namespace LaptopRequisition.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Request?> GetByIdAsync(Guid id) // Changed to nullable
+        public async Task<Request?> GetByIdAsync(Guid id, bool includeRelatedEntities = false)
         {
-            return await _context.Requests
-                .Include(r => r.Employee)
-                .Include(r => r.Laptop)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            IQueryable<Request> query = _context.Requests;
+
+            if (includeRelatedEntities)
+            {
+                query = query.Include(r => r.Employee)
+                             .ThenInclude(e => e.Department)
+                             .Include(r => r.Employee)
+                             .ThenInclude(e => e.Role)
+                             .Include(r => r.Laptop);
+            }
+
+            return await query.FirstOrDefaultAsync(r => r.Id == id); // FIX: Ensure query is materialized
         }
 
-        public async Task<IEnumerable<Request>> GetAllAsync()
+        public async Task<PaginatedResultDto<Request>> GetByEmployeeIdAsync(Guid employeeId, RequestFilterDto filter)
         {
-            return await _context.Requests
-                .Include(r => r.Employee)
-                .Include(r => r.Laptop)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Request>> GetByEmployeeIdAsync(Guid employeeId)
-        {
-            return await _context.Requests
-                .Include(r => r.Employee)
-                .Include(r => r.Laptop)
+            IQueryable<Request> query = _context.Requests
                 .Where(r => r.EmployeeId == employeeId)
-                .OrderByDescending(r => r.CreatedAt)
+                .Include(r => r.Employee)
+                .ThenInclude(e => e.Department)
+                .Include(r => r.Employee)
+                .ThenInclude(e => e.Role)
+                .Include(r => r.Laptop)
+                .AsQueryable();
+
+            // Apply filters from RequestFilterDto
+            if (filter.Status.HasValue)
+            {
+                query = query.Where(r => r.Status == filter.Status.Value);
+            }
+            if (filter.StartDate.HasValue)
+            {
+                query = query.Where(r => r.CreatedAt >= filter.StartDate.Value);
+            }
+            if (filter.EndDate.HasValue)
+            {
+                query = query.Where(r => r.CreatedAt <= filter.EndDate.Value);
+            }
+            if (filter.IsSwapRequest.HasValue)
+            {
+                query = query.Where(r => r.IsSwapRequest == filter.IsSwapRequest.Value);
+            }
+            if (!string.IsNullOrEmpty(filter.SearchTerm))
+            {
+                var searchTermLower = filter.SearchTerm.ToLower();
+                query = query.Where(r => r.Purpose.ToLower().Contains(searchTermLower) ||
+                                         r.PreferredSpecs.ToLower().Contains(searchTermLower) ||
+                                         (r.Employee != null &&
+                                            (r.Employee.FullName.ToLower().Contains(searchTermLower) ||
+                                             r.Employee.StaffId.ToLower().Contains(searchTermLower) ||
+                                             r.Employee.Email.ToLower().Contains(searchTermLower))) ||
+                                         (r.Laptop != null && r.Laptop.SerialNumber.ToLower().Contains(searchTermLower)));
+            }
+
+            // Apply sorting
+            query = ApplySorting(query, filter.SortBy, filter.SortOrder);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
                 .ToListAsync();
+
+            return new PaginatedResultDto<Request>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = filter.PageNumber,
+                PageSize = filter.PageSize
+            };
         }
 
         public async Task<Request?> GetPendingRequestByEmployeeIdAsync(Guid employeeId)
@@ -79,7 +127,6 @@ namespace LaptopRequisition.Infrastructure.Repositories
             }
         }
 
-        // New methods for DashboardService
         public async Task<int> CountByEmployeeIdAsync(Guid employeeId)
         {
             return await _context.Requests
@@ -95,13 +142,13 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        // New methods for History
         public async Task<PaginatedResultDto<Request>> GetEmployeeRequestsAsync(Guid employeeId, HistoryFilterDto filter)
         {
             IQueryable<Request> query = _context.Requests
                 .Where(r => r.EmployeeId == employeeId)
                 .Include(r => r.Laptop)
-                .Include(r => r.Employee);
+                .Include(r => r.Employee)
+                .AsQueryable();
 
             // Apply filters
             if (filter.StartDate.HasValue)
@@ -118,14 +165,10 @@ namespace LaptopRequisition.Infrastructure.Repositories
             }
             if (!string.IsNullOrEmpty(filter.RequestType))
             {
-                // Assuming "LaptopRequest" for Request and "ReturnRequest" for ReturnRequest (which is not in this repo)
-                // For now, only filter by Request type if specified
                 if (filter.RequestType.Equals("LaptopRequest", StringComparison.OrdinalIgnoreCase))
                 {
                     // This query already only gets Requests, so no additional filter needed here
                 }
-                // If "ReturnRequest" is specified, this method won't return anything, as it's for Requests only.
-                // The combined history logic will handle both types.
             }
 
             // Order by creation date descending for chronological list
@@ -154,38 +197,108 @@ namespace LaptopRequisition.Infrastructure.Repositories
             return await _context.Requests
                 .Include(r => r.Laptop)
                 .Include(r => r.Employee)
-                .FirstOrDefaultAsync(r => r.Id == requestId);
+                .FirstOrDefaultAsync(r => r.Id == requestId); // FIX: Ensure query is materialized
         }
 
-        // New method for Admin Dashboard
         public async Task<int> CountByStatusAsync(RequestStatus status)
         {
             return await _context.Requests.CountAsync(r => r.Status == status);
         }
 
-        // New method for Admin Request Management
-        public async Task<PaginatedResultDto<Request>> GetFilteredAndPaginatedRequestsAsync(AdminRequestFilterDto filter)
+        public async Task<PaginatedResultDto<Request>> GetFilteredAndPaginatedRequestsAsync(RequestFilterDto filter)
         {
             IQueryable<Request> query = _context.Requests
                 .Include(r => r.Employee)
-                .Include(r => r.Laptop);
+                .ThenInclude(e => e.Department)
+                .Include(r => r.Employee)
+                .ThenInclude(e => e.Role)
+                .Include(r => r.Laptop)
+                .AsQueryable();
 
-            // Apply filters
+            // Apply search term
             if (!string.IsNullOrEmpty(filter.SearchTerm))
             {
-                query = query.Where(r => r.Employee != null &&
-                                         (r.Employee.FullName.Contains(filter.SearchTerm) ||
-                                          r.Employee.StaffId.Contains(filter.SearchTerm) ||
-                                          r.Laptop != null && r.Laptop.SerialNumber.Contains(filter.SearchTerm)));
+                var searchTermLower = filter.SearchTerm.ToLower();
+                query = query.Where(r => r.Purpose.ToLower().Contains(searchTermLower) ||
+                                         r.PreferredSpecs.ToLower().Contains(searchTermLower) ||
+                                         (r.Employee != null &&
+                                            (r.Employee.FullName.ToLower().Contains(searchTermLower) ||
+                                             r.Employee.StaffId.ToLower().Contains(searchTermLower) ||
+                                             r.Employee.Email.ToLower().Contains(searchTermLower))) ||
+                                         (r.Laptop != null && r.Laptop.SerialNumber.ToLower().Contains(searchTermLower)));
             }
 
+            // Apply filters
+            if (filter.Status.HasValue)
+            {
+                query = query.Where(r => r.Status == filter.Status.Value);
+            }
+            if (filter.EmployeeId.HasValue)
+            {
+                query = query.Where(r => r.EmployeeId == filter.EmployeeId.Value);
+            }
+            if (filter.IsSwapRequest.HasValue)
+            {
+                query = query.Where(r => r.IsSwapRequest == filter.IsSwapRequest.Value);
+            }
+            if (filter.StartDate.HasValue)
+            {
+                query = query.Where(r => r.CreatedAt >= filter.StartDate.Value);
+            }
+            if (filter.EndDate.HasValue)
+            {
+                query = query.Where(r => r.CreatedAt <= filter.EndDate.Value);
+            }
+
+            // Apply sorting
+            query = ApplySorting(query, filter.SortBy, filter.SortOrder);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PaginatedResultDto<Request>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = filter.PageNumber,
+                PageSize = filter.PageSize
+            };
+        }
+
+        public async Task<PaginatedResultDto<Request>> GetFilteredAndPaginatedRequestsForAdminAsync(AdminRequestFilterDto filter)
+        {
+            IQueryable<Request> query = _context.Requests
+                .Include(r => r.Employee)
+                .ThenInclude(e => e.Department)
+                .Include(r => r.Employee)
+                .ThenInclude(e => e.Role)
+                .Include(r => r.Laptop)
+                .AsQueryable();
+
+            // Apply search term
+            if (!string.IsNullOrEmpty(filter.SearchTerm))
+            {
+                var searchTermLower = filter.SearchTerm.ToLower();
+                query = query.Where(r => r.Purpose.ToLower().Contains(searchTermLower) ||
+                                         r.PreferredSpecs.ToLower().Contains(searchTermLower) ||
+                                         (r.Employee != null &&
+                                            (r.Employee.FullName.ToLower().Contains(searchTermLower) ||
+                                             r.Employee.StaffId.ToLower().Contains(searchTermLower) ||
+                                             r.Employee.Email.ToLower().Contains(searchTermLower))) ||
+                                         (r.Laptop != null && r.Laptop.SerialNumber.ToLower().Contains(searchTermLower)));
+            }
+
+            // Apply filters
             if (filter.Status.HasValue)
             {
                 query = query.Where(r => r.Status == filter.Status.Value);
             }
             else
             {
-                // By default, exclude dismissed requests unless explicitly included
                 if (!filter.IncludeDismissed)
                 {
                     query = query.Where(r => !r.IsDismissed);
@@ -213,28 +326,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
             }
 
             // Apply sorting
-            if (!string.IsNullOrEmpty(filter.SortBy))
-            {
-                switch (filter.SortBy.ToLower())
-                {
-                    case "createdat":
-                        query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt);
-                        break;
-                    case "employeename":
-                        query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(r => r.Employee!.FullName) : query.OrderBy(r => r.Employee!.FullName);
-                        break;
-                    case "status":
-                        query = filter.SortOrder?.ToLower() == "desc" ? query.OrderByDescending(r => r.Status) : query.OrderBy(r => r.Status);
-                        break;
-                    default:
-                        query = query.OrderByDescending(r => r.CreatedAt); // Default sort
-                        break;
-                }
-            }
-            else
-            {
-                query = query.OrderByDescending(r => r.CreatedAt); // Default sort
-            }
+            query = ApplySorting(query, filter.SortBy, filter.SortOrder);
 
             var totalCount = await query.CountAsync();
 
@@ -249,6 +341,25 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 TotalCount = totalCount,
                 PageNumber = filter.PageNumber,
                 PageSize = filter.PageSize
+            };
+        }
+
+        private IQueryable<Request> ApplySorting(
+            IQueryable<Request> query,
+            string? sortBy,
+            string? sortOrder)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                return query.OrderByDescending(r => r.CreatedAt);
+
+            var isDesc = sortOrder?.ToLower() == "desc";
+
+            return sortBy.ToLower() switch
+            {
+                "createdat" => isDesc ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt),
+                "employeename" => isDesc ? query.OrderByDescending(r => r.Employee!.FullName) : query.OrderBy(r => r.Employee!.FullName),
+                "status" => isDesc ? query.OrderByDescending(r => r.Status) : query.OrderBy(r => r.Status),
+                _ => query.OrderByDescending(r => r.CreatedAt) // Default sort
             };
         }
     }

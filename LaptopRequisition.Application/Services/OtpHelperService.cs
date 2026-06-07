@@ -1,16 +1,16 @@
-using LaptopRequisition.Application.DTOs.Notification; // Added for NotificationRequest
+using LaptopRequisition.Application.DTOs.Notification;
 using LaptopRequisition.Application.DTOs.OTP;
 using LaptopRequisition.Application.Helpers;
 using LaptopRequisition.Application.Interfaces;
-using LaptopRequisition.Application.Interfaces.External; // For IOtpApi
+using LaptopRequisition.Application.Interfaces.External;
 using LaptopRequisition.Domain.Enums;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Microsoft.Extensions.Options; // Added for IOptions
-using LaptopRequisition.Application.Configurations; // Added for NotificationApiSettings
-using System.IO; // Added for Path.Combine, File.ReadAllTextAsync
-using System; // Added for AppDomain
-
+using Microsoft.Extensions.Options;
+using LaptopRequisition.Application.Configurations;
+using System.IO;
+using System;
+using LaptopRequisition.Domain.Common; // Ensure this is present for ResponseModel
 
 namespace LaptopRequisition.Application.Services
 {
@@ -30,7 +30,7 @@ namespace LaptopRequisition.Application.Services
             _notificationApiSettings = notificationApiSettingsOptions.Value;
         }
 
-        public async Task<ResponseModel<ResponseCodeEnum, OtpResponse>> GenerateOtpAsync(string userRef)
+        public async Task<ResponseModel<ResponseCode, OtpResponse>> GenerateOtpAsync(string userRef)
         {
             var otpResult = await _otpService.GenerateOtpAsync(new GenerateOtpRequest
             {
@@ -50,9 +50,9 @@ namespace LaptopRequisition.Application.Services
                         var otpBaseError = JsonConvert.DeserializeObject<OtpBase>(errorContent);
                         errorMessage = otpBaseError?.Message ?? errorMessage;
                     }
-                    catch (JsonException) { }
+                    catch (JsonException) { /* Log or handle deserialization error */ }
                 }
-                return ResponseModel<ResponseCodeEnum, OtpResponse>.Failure(ResponseCodeEnum.ErrorOccuredTryAgain, errorMessage);
+                return ResponseModel<ResponseCode, OtpResponse>.Failure(ResponseCode.UnknownError, errorMessage);
             }
             
             var otpValue = otpResult.Content.Data!.Otp!;
@@ -62,14 +62,13 @@ namespace LaptopRequisition.Application.Services
 
             if (!sendResult.IsSuccessful)
             {
-                return ResponseModel<ResponseCodeEnum, OtpResponse>.Failure(sendResult.Code, sendResult.Message);
+                return ResponseModel<ResponseCode, OtpResponse>.Failure(sendResult.Code, sendResult.Message);
             }
            
-            
-            return ResponseModel<ResponseCodeEnum, OtpResponse>.Success(otpResult.Content, ResponseCodeEnum.OperationSuccessful);
+            return ResponseModel<ResponseCode, OtpResponse>.Success(otpResult.Content, ResponseCode.Success);
         }
 
-        public async Task<ResponseModel<ResponseCodeEnum, OtpResponse>> ValidateOtpAsync(string retrievalCode, string otp)
+        public async Task<ResponseModel<ResponseCode, OtpResponse>> ValidateOtpAsync(string retrievalCode, string otp)
         {
             var validationResult = await _otpService.ValidateOtpAsync(new ValidateOtpRequest
             {
@@ -88,15 +87,15 @@ namespace LaptopRequisition.Application.Services
                         var otpBaseError = JsonConvert.DeserializeObject<OtpBase>(errorContent);
                         errorMessage = otpBaseError?.Message ?? errorMessage;
                     }
-                    catch (JsonException) { }
+                    catch (JsonException) { /* Log or handle deserialization error */ }
                 }
-                return ResponseModel<ResponseCodeEnum, OtpResponse>.Failure(ResponseCodeEnum.OtpValidationFailed, errorMessage);
+                return ResponseModel<ResponseCode, OtpResponse>.Failure(ResponseCode.OtpValidationFailed, errorMessage);
             }
 
-            return ResponseModel<ResponseCodeEnum, OtpResponse>.Success(validationResult.Content, ResponseCodeEnum.OperationSuccessful);
+            return ResponseModel<ResponseCode, OtpResponse>.Success(validationResult.Content, ResponseCode.Success);
         }
 
-        public async Task<ResponseModel<ResponseCodeEnum, OtpBase>> CheckOtpValidityAsync(string retrievalCode, string userRef)
+        public async Task<ResponseModel<ResponseCode, OtpBase>> CheckOtpValidityAsync(string retrievalCode, string userRef)
         {
             var validityResult = await _otpService.CheckOtpValidityAsync(retrievalCode, userRef);
 
@@ -111,16 +110,16 @@ namespace LaptopRequisition.Application.Services
                         var otpBaseError = JsonConvert.DeserializeObject<OtpBase>(errorContent);
                         errorMessage = otpBaseError?.Message ?? errorMessage;
                     }
-                    catch (JsonException) { }
+                    catch (JsonException) { /* Log or handle deserialization error */ }
                 }
-                return ResponseModel<ResponseCodeEnum, OtpBase>.Failure(ResponseCodeEnum.OtpValidationFailed, errorMessage);
+                return ResponseModel<ResponseCode, OtpBase>.Failure(ResponseCode.OtpValidationFailed, errorMessage);
             }
 
-            return ResponseModel<ResponseCodeEnum, OtpBase>.Success(validityResult.Content, ResponseCodeEnum.OperationSuccessful);
+            return ResponseModel<ResponseCode, OtpBase>.Success(validityResult.Content, ResponseCode.Success);
         }
         
 
-        private async Task<ResponseModel<ResponseCodeEnum, OtpResponse>> SendOtpEmailAsync(
+        private async Task<ResponseModel<ResponseCode, OtpResponse>> SendOtpEmailAsync(
             string email,
             string otp,
             string purpose)
@@ -151,12 +150,12 @@ namespace LaptopRequisition.Application.Services
                 var error = JsonConvert.DeserializeObject<OtpBase>(
                     otpResp.Error?.Content ?? string.Empty);
 
-                return ResponseModel<ResponseCodeEnum, OtpResponse>.Failure(ResponseCodeEnum.ErrorOccuredTryAgain,
+                return ResponseModel<ResponseCode, OtpResponse>.Failure(ResponseCode.UnknownError,
                     error?.Message ?? "Failed to send OTP email.");
             }
 
             Console.WriteLine($"[Otp-Email-Sent] OTP email successfully sent to {email}");
-            return ResponseModel<ResponseCodeEnum, OtpResponse>.Success(null!, ResponseCodeEnum.OperationSuccessful);
+            return ResponseModel<ResponseCode, OtpResponse>.Success(null!, ResponseCode.Success);
         }
 
         private async Task<string> BuildOtpEmailBodyAsync(string otp, string purpose)
@@ -173,7 +172,7 @@ namespace LaptopRequisition.Application.Services
             return body
                 .Replace("{{otp}}", otp)
                 .Replace("{{purpose}}", purpose)
-                .Replace("{{currentYear}}", DateTime.UtcNow.Year.ToString()); // Added current year replacement
+                .Replace("{{currentYear}}", DateTime.UtcNow.Year.ToString());
         }
     }
 }

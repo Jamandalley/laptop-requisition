@@ -89,5 +89,16 @@ namespace LaptopRequisition.Infrastructure.Repositories
                                  .Include(la => la.Laptop)
                                  .ToListAsync();
         }
+
+        // NEW: Implementation for GetCurrentAssignmentForEmployeeAndLaptopAsync
+        public async Task<LaptopAssignments?> GetCurrentAssignmentForEmployeeAndLaptopAsync(Guid employeeId, Guid laptopId)
+        {
+            return await _context.LaptopAssignments
+                                 .Include(la => la.Employee)
+                                 .Include(la => la.Laptop)
+                                 .Where(la => la.EmployeeId == employeeId && la.LaptopId == laptopId)
+                                 .OrderByDescending(la => la.AssignedDate) // Get the most recent assignment if multiple exist
+                                 .FirstOrDefaultAsync();
+        }
     }
 }

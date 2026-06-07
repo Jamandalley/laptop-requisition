@@ -1,21 +1,23 @@
 using LaptopRequisition.Application.DTOs;
 using LaptopRequisition.Application.DTOs.Notification;
 using LaptopRequisition.Application.Interfaces;
-using LaptopRequisition.Application.Interfaces.External; 
+using LaptopRequisition.Application.Interfaces.External;
 using LaptopRequisition.Domain;
 using LaptopRequisition.Domain.Enums;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options; 
-using LaptopRequisition.Application.Configurations; 
+using Microsoft.Extensions.Options;
+using LaptopRequisition.Application.Configurations;
 using System.Security.Claims;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq; 
+using System.Linq;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs.Admin;
 using ClosedXML.Excel;
 using LaptopRequisition.Application.DTOs.Page;
+using LaptopRequisition.Application.DTOs.Request; // Added for HistoryFilterDto
+using LaptopRequisition.Domain.Common; // NEW: Added for Response<T>
 
 namespace LaptopRequisition.Application.Services
 {
@@ -27,8 +29,10 @@ namespace LaptopRequisition.Application.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly INotificationService _notificationService;
         private readonly INotificationApi _notificationApi;
-        private readonly NotificationApiSettings _notificationApiSettings; 
-        private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
+        private readonly NotificationApiSettings _notificationApiSettings;
+
+        private readonly ILaptopAssignmentRepository
+            _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
 
         public ReturnRequestService(
             IReturnRequestRepository returnRequestRepository,
@@ -66,12 +70,9 @@ namespace LaptopRequisition.Application.Services
 
         private async Task<ReturnRequestResponseDto> MapToDto(ReturnRequest returnRequest)
         {
-            Employee? employee = null;
-            if (returnRequest.EmployeeId.HasValue) // Handle nullable EmployeeId
-            {
-                employee = await _employeeRepository.GetByIdAsync(returnRequest.EmployeeId.Value);
-            }
-            var laptop = await _laptopRepository.GetByIdAsync(returnRequest.LaptopId);
+            // Employee and Laptop should be included by the repository methods
+            var employee = returnRequest.Employee;
+            var laptop = returnRequest.Laptop;
 
             return new ReturnRequestResponseDto
             {
@@ -81,34 +82,37 @@ namespace LaptopRequisition.Application.Services
                 LaptopId = returnRequest.LaptopId,
                 LaptopSerialNumber = laptop?.SerialNumber,
                 Reason = returnRequest.Reason,
-                Status = Enum.Parse<ReturnRequestStatus>(returnRequest.Status), 
+                Status = Enum.Parse<ReturnRequestStatus>(returnRequest.Status),
                 CreatedAt = returnRequest.CreatedAt,
                 ReturnedAt = returnRequest.ReturnedAt,
                 UpdatedAt = returnRequest.UpdatedAt
             };
         }
 
-        public async Task<ReturnRequestResponseDto> CreateReturnRequestAsync(CreateReturnRequestDto dto)
+        public async Task<Response<ReturnRequestResponseDto>> CreateReturnRequestAsync(CreateReturnRequestDto dto)
         {
             var employeeId = GetCurrentEmployeeId();
-            
+
             var laptop = await _laptopRepository.GetByIdAsync(dto.LaptopId);
             if (laptop == null)
             {
-                throw new InvalidOperationException("Laptop not found.");
+                return Response<ReturnRequestResponseDto>.Fail(ResponseCode.NotFound,
+                    new List<string> { "Laptop not found." });
             }
 
-            // FIX: Check assignment via LaptopAssignments
             var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(dto.LaptopId);
             if (currentAssignment == null || currentAssignment.EmployeeId != employeeId)
             {
-                throw new InvalidOperationException("Laptop not assigned to the current employee.");
+                return Response<ReturnRequestResponseDto>.Fail(ResponseCode.BadRequest,
+                    new List<string> { "Laptop not assigned to the current employee." });
             }
-            
-            var existingPendingReturn = await _returnRequestRepository.GetPendingReturnRequestByLaptopIdAsync(dto.LaptopId); 
+
+            var existingPendingReturn =
+                await _returnRequestRepository.GetPendingReturnRequestByLaptopIdAsync(dto.LaptopId);
             if (existingPendingReturn != null)
             {
-                throw new InvalidOperationException("A pending return request already exists for this laptop.");
+                return Response<ReturnRequestResponseDto>.Fail(ResponseCode.BadRequest,
+                    new List<string> { "A pending return request already exists for this laptop." });
             }
 
             var returnRequest = new ReturnRequest
@@ -123,13 +127,13 @@ namespace LaptopRequisition.Application.Services
             };
 
             await _returnRequestRepository.AddAsync(returnRequest);
-            
-            await _notificationService.CreateNotificationAsync(employeeId, $"Your return request for laptop {laptop.SerialNumber} has been submitted and is pending review.");
-            
+
+            await _notificationService.CreateNotificationAsync(employeeId,
+                $"Your return request for laptop {laptop.SerialNumber} has been submitted and is pending review.");
+
             var employee = await _employeeRepository.GetByIdAsync(employeeId);
             if (employee != null)
             {
-                // Replaced direct email service with Notification API
                 var emailBody = await BuildReturnRequestSubmittedEmailBodyAsync(employee.FullName, laptop.SerialNumber);
                 var notificationRequest = new NotificationRequest
                 {
@@ -141,92 +145,128 @@ namespace LaptopRequisition.Application.Services
                 };
                 var notificationResponse = await _notificationApi.SendNotificationAsync(notificationRequest);
 
-                if (!notificationResponse.IsSuccessStatusCode || notificationResponse.Content is null || !notificationResponse.Content.IsSuccessful)
+                if (!notificationResponse.IsSuccessStatusCode || notificationResponse.Content is null ||
+                    !notificationResponse.Content.IsSuccessful)
                 {
-                    throw new InvalidOperationException($"Failed to send return request submitted email: {notificationResponse.Error?.Content}");
+                    return Response<ReturnRequestResponseDto>.Fail(ResponseCode.ServerError,
+                        new List<string>
+                        {
+                            $"Failed to send return request submitted email: {notificationResponse.Error?.Content}"
+                        });
                 }
             }
 
-            return await MapToDto(returnRequest);
+            return Response<ReturnRequestResponseDto>.Ok(await MapToDto(returnRequest));
         }
 
-        public async Task<ReturnRequestResponseDto> GetReturnRequestByIdAsync(Guid id)
+        public async Task<Response<ReturnRequestResponseDto>> GetReturnRequestByIdAsync(Guid id)
         {
-            var returnRequest = await _returnRequestRepository.GetByIdAsync(id);
+            var returnRequest =
+                await _returnRequestRepository.GetByIdAsync(id,
+                    includeRelatedEntities: true); // FIX: Include related entities
             if (returnRequest == null)
             {
-                throw new InvalidOperationException("Return request not found.");
+                return Response<ReturnRequestResponseDto>.Fail(ResponseCode.NotFound,
+                    new List<string> { "Return request not found." });
             }
-            return await MapToDto(returnRequest);
+
+            return Response<ReturnRequestResponseDto>.Ok(await MapToDto(returnRequest));
         }
 
-        public async Task<IEnumerable<ReturnRequestResponseDto>> GetEmployeeReturnRequestsAsync(Guid employeeId)
+        // FIX: Updated GetEmployeeReturnRequestsAsync signature and implementation
+        public async Task<Response<PaginatedResultDto<ReturnRequestResponseDto>>> GetEmployeeReturnRequestsAsync(
+            Guid employeeId, HistoryFilterDto filter)
         {
-            var returnRequests = await _returnRequestRepository.GetByEmployeeIdAsync(employeeId);
-            var dtos = new List<ReturnRequestResponseDto>();
-            foreach (var rr in returnRequests)
+            var paginatedReturnRequests =
+                await _returnRequestRepository.GetEmployeeReturnRequestsAsync(employeeId, filter);
+
+            var mappedItems = new List<ReturnRequestResponseDto>();
+            foreach (var rr in paginatedReturnRequests.Items)
             {
-                dtos.Add(await MapToDto(rr));
+                mappedItems.Add(await MapToDto(rr));
             }
-            return dtos;
+
+            return Response<PaginatedResultDto<ReturnRequestResponseDto>>.Ok(
+                new PaginatedResultDto<ReturnRequestResponseDto>
+                {
+                    Items = mappedItems,
+                    TotalCount = paginatedReturnRequests.TotalCount,
+                    PageNumber = paginatedReturnRequests.PageNumber,
+                    PageSize = paginatedReturnRequests.PageSize
+                });
         }
 
-        public async Task<IEnumerable<ReturnRequestResponseDto>> GetAllReturnRequestsAsync()
+        // FIX: Updated GetAllReturnRequestsAsync signature and implementation
+        public async Task<Response<PaginatedResultDto<ReturnRequestResponseDto>>> GetAllReturnRequestsAsync(
+            AdminReturnRequestFilterDto filter)
         {
-            var returnRequests = await _returnRequestRepository.GetAllAsync();
-            var dtos = new List<ReturnRequestResponseDto>();
-            foreach (var rr in returnRequests)
+            var paginatedReturnRequests =
+                await _returnRequestRepository.GetFilteredAndPaginatedReturnRequestsAsync(filter);
+
+            var mappedItems = new List<ReturnRequestResponseDto>();
+            foreach (var rr in paginatedReturnRequests.Items)
             {
-                dtos.Add(await MapToDto(rr));
+                mappedItems.Add(await MapToDto(rr));
             }
-            return dtos;
+
+            return Response<PaginatedResultDto<ReturnRequestResponseDto>>.Ok(
+                new PaginatedResultDto<ReturnRequestResponseDto>
+                {
+                    Items = mappedItems,
+                    TotalCount = paginatedReturnRequests.TotalCount,
+                    PageNumber = paginatedReturnRequests.PageNumber,
+                    PageSize = paginatedReturnRequests.PageSize
+                });
         }
 
-        public async Task ApproveReturnRequestAsync(ApproveReturnRequestDto dto) // Updated signature
+        public async Task<Response> ApproveReturnRequestAsync(ApproveReturnRequestDto dto) // Updated signature
         {
-            var returnRequest = await _returnRequestRepository.GetByIdAsync(dto.ReturnRequestId); // Use dto.ReturnRequestId
+            var returnRequest =
+                await _returnRequestRepository.GetByIdAsync(dto.ReturnRequestId, includeRelatedEntities: true); // FIX: Include related entities
             if (returnRequest == null)
             {
-                throw new InvalidOperationException("Return request not found.");
+                return Response.Fail(ResponseCode.NotFound, new List<string> { "Return request not found." });
             }
+
             if (returnRequest.Status != ReturnRequestStatus.Pending.ToString())
             {
-                throw new InvalidOperationException("Only pending return requests can be approved.");
+                return Response.Fail(ResponseCode.BadRequest,
+                    new List<string> { "Only pending return requests can be approved." });
             }
 
             returnRequest.Status = ReturnRequestStatus.Approved.ToString();
             returnRequest.UpdatedAt = DateTime.UtcNow;
             await _returnRequestRepository.UpdateAsync(returnRequest);
-            
+
             var laptop = await _laptopRepository.GetByIdAsync(returnRequest.LaptopId);
             if (laptop != null)
             {
-                // FIX: Remove LaptopAssignment when approving return
                 var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(laptop.Id);
                 if (currentAssignment != null)
                 {
                     await _laptopAssignmentRepository.RemoveAsync(currentAssignment);
                 }
 
-                // Set laptop status based on returned condition
-                laptop.Status = dto.ReturnedCondition; 
+                laptop.Status = dto.ReturnedCondition;
                 await _laptopRepository.UpdateAsync(laptop);
             }
-            
-            if (returnRequest.EmployeeId.HasValue) // Check for nullability
+
+            if (returnRequest.EmployeeId.HasValue)
             {
-                await _notificationService.CreateNotificationAsync(returnRequest.EmployeeId.Value, $"Your return request for laptop {laptop?.SerialNumber} has been approved. Laptop condition: {dto.ReturnedCondition}.");
+                await _notificationService.CreateNotificationAsync(returnRequest.EmployeeId.Value,
+                    $"Your return request for laptop {laptop?.SerialNumber} has been approved. Laptop condition: {dto.ReturnedCondition}.");
             }
-            
+
             Employee? employee = null;
-            if (returnRequest.EmployeeId.HasValue) // Check for nullability
+            if (returnRequest.EmployeeId.HasValue)
             {
                 employee = await _employeeRepository.GetByIdAsync(returnRequest.EmployeeId.Value);
             }
 
             if (employee != null)
             {
-                var emailBody = await BuildReturnRequestApprovedEmailBodyAsync(employee.FullName, laptop?.SerialNumber ?? "N/A");
+                var emailBody =
+                    await BuildReturnRequestApprovedEmailBodyAsync(employee.FullName, laptop?.SerialNumber ?? "N/A");
                 var notificationRequest = new NotificationRequest
                 {
                     Channels = new List<string> { "Email" },
@@ -237,23 +277,31 @@ namespace LaptopRequisition.Application.Services
                 };
                 var notificationResponse = await _notificationApi.SendNotificationAsync(notificationRequest);
 
-                if (!notificationResponse.IsSuccessStatusCode || notificationResponse.Content is null || !notificationResponse.Content.IsSuccessful)
+                if (!notificationResponse.IsSuccessStatusCode || notificationResponse.Content is null ||
+                    !notificationResponse.Content.IsSuccessful)
                 {
-                    throw new InvalidOperationException($"Failed to send return request approved email: {notificationResponse.Error?.Content}");
+                    return Response.Fail(ResponseCode.ServerError,
+                        new List<string>
+                            { $"Failed to send return request approved email: {notificationResponse.Error?.Content}" });
                 }
             }
+
+            return Response.Ok();
         }
 
-        public async Task RejectReturnRequestAsync(Guid returnRequestId, string reason)
+        public async Task<Response> RejectReturnRequestAsync(Guid returnRequestId, string reason)
         {
-            var returnRequest = await _returnRequestRepository.GetByIdAsync(returnRequestId);
+            var returnRequest =
+                await _returnRequestRepository.GetByIdAsync(returnRequestId, includeRelatedEntities: true); // FIX: Include related entities
             if (returnRequest == null)
             {
-                throw new InvalidOperationException("Return request not found.");
+                return Response.Fail(ResponseCode.NotFound, new List<string> { "Return request not found." });
             }
+
             if (returnRequest.Status != ReturnRequestStatus.Pending.ToString())
             {
-                throw new InvalidOperationException("Only pending return requests can be rejected.");
+                return Response.Fail(ResponseCode.BadRequest,
+                    new List<string> { "Only pending return requests can be rejected." });
             }
 
             returnRequest.Status = ReturnRequestStatus.Rejected.ToString();
@@ -261,21 +309,25 @@ namespace LaptopRequisition.Application.Services
             returnRequest.UpdatedAt = DateTime.UtcNow;
             await _returnRequestRepository.UpdateAsync(returnRequest);
 
-            if (returnRequest.EmployeeId.HasValue) // Check for nullability
+            if (returnRequest.EmployeeId.HasValue)
             {
-                await _notificationService.CreateNotificationAsync(returnRequest.EmployeeId.Value, $"Your return request for laptop {returnRequest.LaptopId} has been rejected. Reason: {reason}");
+                await _notificationService.CreateNotificationAsync(returnRequest.EmployeeId.Value,
+                    $"Your return request for laptop {returnRequest.Laptop?.SerialNumber} has been rejected. Reason: {reason}"); // FIX: Use laptop?.SerialNumber
             }
-            
+
             Employee? employee = null;
-            if (returnRequest.EmployeeId.HasValue) // Check for nullability
+            if (returnRequest.EmployeeId.HasValue)
             {
                 employee = await _employeeRepository.GetByIdAsync(returnRequest.EmployeeId.Value);
             }
-            var laptop = await _laptopRepository.GetByIdAsync(returnRequest.LaptopId); // LaptopId is non-nullable
+
+            var laptop = returnRequest.Laptop; // FIX: Laptop is already included
 
             if (employee != null)
             {
-                var emailBody = await BuildReturnRequestRejectedEmailBodyAsync(employee.FullName, laptop?.SerialNumber ?? "N/A", reason);
+                var emailBody =
+                    await BuildReturnRequestRejectedEmailBodyAsync(employee.FullName, laptop?.SerialNumber ?? "N/A",
+                        reason);
                 var notificationRequest = new NotificationRequest
                 {
                     Channels = new List<string> { "Email" },
@@ -286,56 +338,75 @@ namespace LaptopRequisition.Application.Services
                 };
                 var notificationResponse = await _notificationApi.SendNotificationAsync(notificationRequest);
 
-                if (!notificationResponse.IsSuccessStatusCode || notificationResponse.Content is null || !notificationResponse.Content.IsSuccessful)
+                if (!notificationResponse.IsSuccessStatusCode || notificationResponse.Content is null ||
+                    !notificationResponse.Content.IsSuccessful)
                 {
-                    throw new InvalidOperationException($"Failed to send return request rejected email: {notificationResponse.Error?.Content}");
+                    return Response.Fail(ResponseCode.ServerError,
+                        new List<string>
+                            { $"Failed to send return request rejected email: {notificationResponse.Error?.Content}" });
                 }
             }
+
+            return Response.Ok();
         }
 
-        public async Task DeleteReturnRequestAsync(Guid returnRequestId)
+        public async Task<Response> DeleteReturnRequestAsync(Guid returnRequestId)
         {
             var returnRequest = await _returnRequestRepository.GetByIdAsync(returnRequestId);
             if (returnRequest == null)
             {
-                throw new InvalidOperationException("Return request not found.");
+                return Response.Fail(ResponseCode.NotFound, new List<string> { "Return request not found." });
             }
+
             await _returnRequestRepository.DeleteAsync(returnRequestId);
+            return Response.Ok();
         }
-        
-        private async Task<string> BuildReturnRequestSubmittedEmailBodyAsync(string employeeName, string laptopSerialNumber)
+
+        private async Task<string> BuildReturnRequestSubmittedEmailBodyAsync(string employeeName,
+            string laptopSerialNumber)
         {
-            var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EmailTemplates", "ReturnRequestSubmitted.html");
+            var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EmailTemplates",
+                "ReturnRequestSubmitted.html");
             if (!File.Exists(templatePath))
             {
-                return $"Dear {employeeName},\n\nYour request to return laptop {laptopSerialNumber} has been submitted successfully. We will notify you once it has been processed.\n\nBest regards,\nLRS Team";
+                return
+                    $"Dear {employeeName},\n\nYour request to return laptop {laptopSerialNumber} has been submitted successfully. We will notify you once it has been processed.\n\nBest regards,\nLRS Team";
             }
+
             var body = await File.ReadAllTextAsync(templatePath);
             return body
                 .Replace("{{employeeName}}", employeeName)
                 .Replace("{{laptopSerialNumber}}", laptopSerialNumber);
         }
-        
-        private async Task<string> BuildReturnRequestApprovedEmailBodyAsync(string employeeName, string laptopSerialNumber)
+
+        private async Task<string> BuildReturnRequestApprovedEmailBodyAsync(string employeeName,
+            string laptopSerialNumber)
         {
-            var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EmailTemplates", "ReturnRequestApproved.html");
+            var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EmailTemplates",
+                "ReturnRequestApproved.html");
             if (!File.Exists(templatePath))
             {
-                return $"Dear {employeeName},\n\nYour request to return laptop {laptopSerialNumber} has been approved. Please proceed with the physical return process.\n\nBest regards,\nLRS Team";
+                return
+                    $"Dear {employeeName},\n\nYour request to return laptop {laptopSerialNumber} has been approved. Please proceed with the physical return process.\n\nBest regards,\nLRS Team";
             }
+
             var body = await File.ReadAllTextAsync(templatePath);
             return body
                 .Replace("{{employeeName}}", employeeName)
                 .Replace("{{laptopSerialNumber}}", laptopSerialNumber);
         }
-        
-        private async Task<string> BuildReturnRequestRejectedEmailBodyAsync(string employeeName, string laptopSerialNumber, string reason)
+
+        private async Task<string> BuildReturnRequestRejectedEmailBodyAsync(string employeeName,
+            string laptopSerialNumber, string reason)
         {
-            var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EmailTemplates", "ReturnRequestRejected.html");
+            var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EmailTemplates",
+                "ReturnRequestRejected.html");
             if (!File.Exists(templatePath))
             {
-                return $"Dear {employeeName},\n\nYour request to return laptop {laptopSerialNumber} has been rejected. Reason: {reason}\n\nBest regards,\nLRS Team";
+                return
+                    $"Dear {employeeName},\n\nYour request to return laptop {laptopSerialNumber} has been rejected. Reason: {reason}\n\nBest regards,\nLRS Team";
             }
+
             var body = await File.ReadAllTextAsync(templatePath);
             return body
                 .Replace("{{employeeName}}", employeeName)
@@ -343,9 +414,11 @@ namespace LaptopRequisition.Application.Services
                 .Replace("{{reason}}", reason);
         }
 
-        public async Task<PaginatedResultDto<ReturnRequestResponseDto>> GetFilteredAndPaginatedReturnRequestsForAdminAsync(AdminReturnRequestFilterDto filter)
+        public async Task<Response<PaginatedResultDto<ReturnRequestResponseDto>>>
+            GetFilteredAndPaginatedReturnRequestsForAdminAsync(AdminReturnRequestFilterDto filter)
         {
-            var paginatedReturnRequests = await _returnRequestRepository.GetFilteredAndPaginatedReturnRequestsAsync(filter);
+            var paginatedReturnRequests =
+                await _returnRequestRepository.GetFilteredAndPaginatedReturnRequestsAsync(filter);
 
             var mappedItems = new List<ReturnRequestResponseDto>();
             foreach (var rr in paginatedReturnRequests.Items)
@@ -353,37 +426,40 @@ namespace LaptopRequisition.Application.Services
                 mappedItems.Add(await MapToDto(rr));
             }
 
-            return new PaginatedResultDto<ReturnRequestResponseDto>
-            {
-                Items = mappedItems,
-                TotalCount = paginatedReturnRequests.TotalCount,
-                PageNumber = paginatedReturnRequests.PageNumber,
-                PageSize = paginatedReturnRequests.PageSize
-            };
+            return Response<PaginatedResultDto<ReturnRequestResponseDto>>.Ok(
+                new PaginatedResultDto<ReturnRequestResponseDto>
+                {
+                    Items = mappedItems,
+                    TotalCount = paginatedReturnRequests.TotalCount,
+                    PageNumber = paginatedReturnRequests.PageNumber,
+                    PageSize = paginatedReturnRequests.PageSize
+                });
         }
 
-        public async Task<byte[]> ExportFilteredReturnRequestsForAdminAsync(AdminReturnRequestFilterDto filter)
+        public async Task<Response<byte[]>> ExportFilteredReturnRequestsForAdminAsync(
+            AdminReturnRequestFilterDto filter)
         {
             // Retrieve all filtered return requests (no pagination for export)
-            var allFilteredReturnRequests = (await _returnRequestRepository.GetFilteredAndPaginatedReturnRequestsAsync(new AdminReturnRequestFilterDto
-            {
-                SearchTerm = filter.SearchTerm,
-                Status = filter.Status,
-                EmployeeId = filter.EmployeeId,
-                LaptopId = filter.LaptopId,
-                StartDate = filter.StartDate,
-                EndDate = filter.EndDate,
-                SortBy = filter.SortBy,
-                SortOrder = filter.SortOrder,
-                PageNumber = 1, 
-                PageSize = int.MaxValue 
-            })).Items.ToList();
+            var allFilteredReturnRequests = (await _returnRequestRepository.GetFilteredAndPaginatedReturnRequestsAsync(
+                new AdminReturnRequestFilterDto
+                {
+                    SearchTerm = filter.SearchTerm,
+                    Status = filter.Status,
+                    EmployeeId = filter.EmployeeId,
+                    LaptopId = filter.LaptopId,
+                    StartDate = filter.StartDate,
+                    EndDate = filter.EndDate,
+                    SortBy = filter.SortBy,
+                    SortOrder = filter.SortOrder,
+                    PageNumber = 1,
+                    PageSize = int.MaxValue
+                })).Items.ToList();
 
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add("Admin Return Requests");
 
-              
+
                 worksheet.Cell(1, 1).Value = "Return Request ID";
                 worksheet.Cell(1, 2).Value = "Employee Name";
                 worksheet.Cell(1, 3).Value = "Employee Email";
@@ -398,7 +474,7 @@ namespace LaptopRequisition.Application.Services
                 for (int i = 0; i < allFilteredReturnRequests.Count(); i++)
                 {
                     var returnRequest = allFilteredReturnRequests.ElementAt(i);
-                    int row = i + 2; 
+                    int row = i + 2;
 
                     worksheet.Cell(row, 1).Value = returnRequest.Id.ToString();
                     worksheet.Cell(row, 2).Value = returnRequest.Employee?.FullName;
@@ -410,13 +486,14 @@ namespace LaptopRequisition.Application.Services
                     worksheet.Cell(row, 8).Value = returnRequest.ReturnedAt?.ToString("yyyy-MM-dd HH:mm");
                     worksheet.Cell(row, 9).Value = returnRequest.UpdatedAt.ToString("yyyy-MM-dd HH:mm");
                 }
-                
+
                 worksheet.Columns().AdjustToContents();
 
                 using (var stream = new MemoryStream())
                 {
                     workbook.SaveAs(stream);
-                    return stream.ToArray();
+                    return Response<byte[]>.Ok(stream.ToArray());
+
                 }
             }
         }

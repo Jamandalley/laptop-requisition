@@ -5,42 +5,45 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using LaptopRequisition.Application.DTOs.Admin;
 using LaptopRequisition.Application.DTOs.Page; // Added for AdminRequestFilterDto
+using LaptopRequisition.Domain.Common; // NEW: Added for Response<T>
 
 namespace LaptopRequisition.Application.Interfaces
 {
     public interface IRequestService
     {
-        Task<RequestResponseDto> CreateRequestAsync(CreateRequestDto dto);
+        Task<Response<RequestResponseDto>> CreateRequestAsync(CreateRequestDto dto);
 
-        Task<RequestResponseDto> GetRequestByIdAsync(Guid id);
+        Task<Response<RequestResponseDto>> GetRequestByIdAsync(Guid id);
 
-        Task<IEnumerable<RequestResponseDto>> GetEmployeeRequestsAsync(Guid employeeId);
+        // FIX: Modified GetEmployeeRequestsAsync to include pagination and filtering
+        Task<Response<PaginatedResultDto<RequestResponseDto>>> GetEmployeeRequestsAsync(Guid employeeId, RequestFilterDto filter);
 
-        Task<IEnumerable<RequestResponseDto>> GetAllRequestsAsync();
+        // NEW: Modified to include pagination and filtering for general requests
+        Task<Response<PaginatedResultDto<RequestResponseDto>>> GetAllRequestsAsync(RequestFilterDto filter);
 
-        Task ApproveRequestAsync(Guid requestId);
+        Task<Response> ApproveRequestAsync(Guid requestId);
 
-        Task RejectRequestAsync(Guid requestId, string reason);
+        Task<Response> RejectRequestAsync(Guid requestId, string reason);
 
-        Task AssignLaptopAsync(Guid requestId, Guid laptopId);
+        Task<Response> AssignLaptopAsync(Guid requestId, Guid laptopId);
 
         // New methods for Request Management
-        Task<RequestStatusDetailDto> GetEmployeeRequestStatusDetailAsync(Guid employeeId);
-        Task DismissRejectedRequestAsync(Guid requestId, Guid employeeId);
-        Task ConfirmReceiptAsync(Guid requestId, Guid employeeId);
+        Task<Response<RequestStatusDetailDto>> GetEmployeeRequestStatusDetailAsync(Guid employeeId);
+        Task<Response> DismissRejectedRequestAsync(Guid requestId, Guid employeeId);
+        Task<Response> ConfirmReceiptAsync(Guid requestId, Guid employeeId);
 
         // New method for History
-        Task<PaginatedResultDto<RequestHistoryDto>> GetEmployeeHistoryAsync(Guid employeeId, HistoryFilterDto filter);
-        Task<RequestHistoryDto> GetHistoryItemByIdAsync(Guid id, Guid employeeId); // Added
+        Task<Response<PaginatedResultDto<RequestHistoryDto>>> GetEmployeeHistoryAsync(Guid employeeId, HistoryFilterDto filter);
+        Task<Response<RequestHistoryDto>> GetHistoryItemByIdAsync(Guid id, Guid employeeId); // Added
 
         // New method for Export
-        Task<byte[]> ExportEmployeeHistoryAsync(Guid employeeId, HistoryFilterDto filter);
+        Task<Response<byte[]>> ExportEmployeeHistoryAsync(Guid employeeId, HistoryFilterDto filter);
 
         // New method for Reporting Issue
-        Task ReportIssueAsync(Guid employeeId, ReportIssueDto dto);
+        Task<Response> ReportIssueAsync(Guid employeeId, ReportIssueDto dto);
 
         // New method for Admin Request Management
-        Task<PaginatedResultDto<RequestResponseDto>> GetFilteredAndPaginatedRequestsForAdminAsync(AdminRequestFilterDto filter);
-        Task<byte[]> ExportFilteredRequestsForAdminAsync(AdminRequestFilterDto filter); // New method
+        Task<Response<PaginatedResultDto<RequestResponseDto>>> GetFilteredAndPaginatedRequestsForAdminAsync(AdminRequestFilterDto filter);
+        Task<Response<byte[]>> ExportFilteredRequestsForAdminAsync(AdminRequestFilterDto filter); // New method
     }
 }

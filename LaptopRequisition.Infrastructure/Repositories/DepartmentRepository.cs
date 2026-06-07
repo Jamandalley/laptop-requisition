@@ -1,6 +1,10 @@
 ﻿using LaptopRequisition.Application.Interfaces;
 using LaptopRequisition.Domain;
 using Microsoft.EntityFrameworkCore;
+using System; // Added for Guid
+using System.Collections.Generic; // Added for IEnumerable
+using System.Linq; // Added for LINQ
+using System.Threading.Tasks; // Added for Task
 
 namespace LaptopRequisition.Infrastructure.Repositories
 {
@@ -13,12 +17,12 @@ namespace LaptopRequisition.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Department> GetByIdAsync(Guid id)
+        public async Task<Department?> GetByIdAsync(Guid id) // Changed to nullable
         {
             return await _context.Departments.FindAsync(id);
         }
 
-        public async Task<Department> GetByNameAsync(string name)
+        public async Task<Department?> GetByNameAsync(string name) // Changed to nullable
         {
             return await _context.Departments.FirstOrDefaultAsync(d => d.Name == name);
         }
@@ -48,6 +52,11 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 _context.Departments.Remove(department);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<bool> AnyEmployeesInDepartmentAsync(Guid departmentId) // NEW: Implementation
+        {
+            return await _context.Employees.AnyAsync(e => e.DepartmentId == departmentId);
         }
     }
 }

@@ -18,5 +18,7 @@ namespace LaptopRequisition.Application.Interfaces
         Task<bool> AnyAssignmentForEmployeeAsync(Guid employeeId);
         Task<bool> AnyAssignmentForLaptopAsync(Guid laptopId);
         Task<IEnumerable<LaptopAssignments>> GetAllAsync();
+        // NEW: Method to get current assignment for a specific employee and laptop
+        Task<LaptopAssignments?> GetCurrentAssignmentForEmployeeAndLaptopAsync(Guid employeeId, Guid laptopId);
     }
 }

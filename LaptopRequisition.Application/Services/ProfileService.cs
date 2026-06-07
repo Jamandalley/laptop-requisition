@@ -11,6 +11,7 @@ using LaptopRequisition.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using LaptopRequisition.Application.DTOs.Page;
 using System.Linq; // Added for LINQ operations
+using System.Collections.Generic; // Added for List<string>
 
 namespace LaptopRequisition.Application.Services;
 
@@ -33,7 +34,7 @@ public class ProfileService(
         {
             return Response<ProfileDto>.Fail(
                 ResponseCode.NotFound, // Changed to NotFound for single entity
-                ["Employee not found"]);
+                new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
         // Department is already included in GetByIdWithDepartmentAndRoleAsync
@@ -70,7 +71,7 @@ public class ProfileService(
 
         if (employee == null)
         {
-            return Response.Fail(ResponseCode.NotFound, ["Employee not found"]); // Changed to NotFound
+            return Response.Fail(ResponseCode.NotFound, new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
         employee.FullName = dto.FullName;
@@ -91,7 +92,7 @@ public class ProfileService(
 
         if (employee == null)
         {
-            return Response<string>.Fail(ResponseCode.NotFound, ["Employee not found"]); // Changed to NotFound
+            return Response<string>.Fail(ResponseCode.NotFound, new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
         var uploadsFolder = Path.Combine(
@@ -131,7 +132,7 @@ public class ProfileService(
 
         if (employee == null)
         {
-            return Response.Fail(ResponseCode.NotFound, ["Employee not found"]); // Changed to NotFound
+            return Response.Fail(ResponseCode.NotFound, new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
         if (!string.IsNullOrEmpty(employee.ProfilePictureUrl))

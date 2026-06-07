@@ -16,7 +16,5 @@ public class RequestStatusDto
 
     public DateTime? ApprovedRejectedAt { get; set; }
 
-    public DateTime? AssignedAt { get; set; }
-
     public bool IsReceiptConfirmed { get; set; }
 }

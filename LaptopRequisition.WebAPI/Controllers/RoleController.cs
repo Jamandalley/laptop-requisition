@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
-    [Route("api/admin/roles")] // Dedicated route for admin role management
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
+    [Route("api/roles")] // Changed route to be more general for public GET access
+    // Removed: [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // Removed from controller level
     public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
@@ -21,10 +21,10 @@ namespace LaptopRequisition.WebAPI.Controllers
             _roleService = roleService;
         }
 
-        [HttpGet] // GET /api/admin/roles
+        [HttpGet] // GET /api/roles
+        [Authorize] // Accessible to any authenticated user
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<RoleResponseDto>))]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllRoles()
         {
@@ -33,9 +33,9 @@ namespace LaptopRequisition.WebAPI.Controllers
                 var roles = await _roleService.GetAllRolesAsync();
                 return Ok(roles);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized();
             }
             catch (Exception ex)
             {
@@ -44,11 +44,11 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
         }
 
-        [HttpGet("{id}")] // GET /api/admin/roles/{id}
+        [HttpGet("{id}")] // GET /api/roles/{id}
+        [Authorize] // Accessible to any authenticated user
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RoleResponseDto))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetRoleById(Guid id)
         {
@@ -61,9 +61,9 @@ namespace LaptopRequisition.WebAPI.Controllers
             {
                 return NotFound(new { message = ex.Message });
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized();
             }
             catch (Exception ex)
             {
@@ -72,7 +72,8 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id}")] // PUT /api/roles/{id}
+        [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RoleResponseDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -99,9 +100,9 @@ namespace LaptopRequisition.WebAPI.Controllers
                 }
                 return BadRequest(new { message = ex.Message });
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized();
             }
             catch (Exception ex)
             {
@@ -110,7 +111,8 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
         }
 
-        [HttpDelete("{id}")] // DELETE /api/admin/roles/{id}
+        [HttpDelete("{id}")] // DELETE /api/roles/{id}
+        [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -132,9 +134,9 @@ namespace LaptopRequisition.WebAPI.Controllers
                 }
                 return BadRequest(new { message = ex.Message });
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized();
             }
             catch (Exception ex)
             {

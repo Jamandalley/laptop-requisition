@@ -7,6 +7,8 @@ namespace LaptopRequisition.Application.DTOs.Request
     {
         public Guid Id { get; set; }
         public DateTime Date { get; set; }
+        
+        public DateTime? AssignedAt { get; set; }
         public string RequestType { get; set; } = string.Empty; // "Laptop Request" or "Return Request"
         public RequestStatus? Status { get; set; } // For Laptop Request
         public ReturnRequestStatus? ReturnStatus { get; set; } // For Return Request
