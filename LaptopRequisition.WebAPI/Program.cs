@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization; // Keep this
 using LaptopRequisition.WebAPI.Middleware;
 using MySql.EntityFrameworkCore;
 using Refit;
@@ -22,13 +22,18 @@ using LaptopRequisition.WebAPI.Endpoints; // NEW: Added for RequestEndpoints, Re
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
+// Configure JSON options for MVC Controllers (already present)
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
+// Configure JSON options for Minimal APIs and other HTTP APIs
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 
 builder.Services.AddEndpointsApiExplorer();
