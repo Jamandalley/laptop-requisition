@@ -46,7 +46,7 @@ namespace LaptopRequisition.Application.Services
             var currentAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
             var currentLaptop = currentAssignment?.Laptop; // Extract the laptop from the assignment
 
-            var currentActiveRequest = await _requestRepository.GetPendingOrApprovedRequestByEmployeeIdAsync(employeeId);
+            var currentActiveRequest = await _requestRepository.GetLatestRequestByEmployeeIdAsync(employeeId);
             var unreadNotificationsCount = await _notificationRepository.CountUnreadByEmployeeIdAsync(employeeId);
             var recentNotifications = (await _notificationRepository.GetRecentNotificationsByEmployeeIdAsync(employeeId, 4))
                                         .Select(n => new NotificationResponseDto

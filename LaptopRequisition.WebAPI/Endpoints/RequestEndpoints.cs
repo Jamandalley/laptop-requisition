@@ -62,7 +62,7 @@ namespace LaptopRequisition.WebAPI.Endpoints
                 return response.IsSuccessful
                     ? Results.Ok(response.Data)
                     : MapResponseToIResult(response);
-            }).WithOpenApi();
+            }).WithName("GetRequestByIdRoute").WithOpenApi(); // FIX: Added .WithName("GetRequestByIdRoute")
 
             // GET /api/requests/status
             requestsGroup.MapGet("/status", async (

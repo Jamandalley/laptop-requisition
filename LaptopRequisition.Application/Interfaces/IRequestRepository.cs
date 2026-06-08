@@ -21,7 +21,7 @@ namespace LaptopRequisition.Application.Interfaces
         Task UpdateAsync(Request request);
         Task DeleteAsync(Guid id);
         Task<int> CountByEmployeeIdAsync(Guid employeeId);
-        Task<Request?> GetPendingOrApprovedRequestByEmployeeIdAsync(Guid employeeId);
+        Task<Request?> GetLatestRequestByEmployeeIdAsync(Guid employeeId);
 
         // New methods for History (already paginated)
         Task<PaginatedResultDto<Request>> GetEmployeeRequestsAsync(Guid employeeId, HistoryFilterDto filter);

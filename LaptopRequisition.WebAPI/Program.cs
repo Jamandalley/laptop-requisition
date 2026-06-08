@@ -79,7 +79,7 @@ builder.Services.Configure<OtpApiSettings>(builder.Configuration.GetSection("Otp
 builder.Services.Configure<NotificationApiSettings>(builder.Configuration.GetSection("NotificationApiSettings")); 
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection("AuthSettings")); 
 builder.Services.Configure<RecycleBinSettings>(builder.Configuration.GetSection("RecycleBinSettings"));
-
+builder.Services.Configure<SsoPasswordResetSettings>(builder.Configuration.GetSection("SsoPasswordResetSettings")); // NEW: Configure SsoPasswordResetSettings
 
 
 builder.Services.AddAuthPlatform(builder.Configuration); 
@@ -120,6 +120,16 @@ builder.Services
     {
         var notificationApiSettings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<NotificationApiSettings>>().Value;
         client.BaseAddress = new Uri(notificationApiSettings.BaseUrl);
+    })
+    .AddHttpMessageHandler<LoggingHandler>(); 
+
+// NEW: Register ISsoPasswordResetClient
+builder.Services
+    .AddRefitClient<ISsoPasswordResetClient>()
+    .ConfigureHttpClient((serviceProvider, client) =>
+    {
+        var ssoPasswordResetSettings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<SsoPasswordResetSettings>>().Value;
+        client.BaseAddress = new Uri(ssoPasswordResetSettings.BaseUrl);
     })
     .AddHttpMessageHandler<LoggingHandler>(); 
 

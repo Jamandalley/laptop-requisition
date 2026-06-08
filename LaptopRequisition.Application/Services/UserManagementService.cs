@@ -345,7 +345,7 @@ namespace LaptopRequisition.Application.Services
             }
 
             // Check if the employee has any pending requests
-            var pendingRequest = await _requestRepository.GetPendingOrApprovedRequestByEmployeeIdAsync(employeeId);
+            var pendingRequest = await _requestRepository.GetLatestRequestByEmployeeIdAsync(employeeId);
             if (pendingRequest != null)
             {
                 throw new InvalidOperationException("Cannot soft-delete an employee with pending or approved requests.");

@@ -130,7 +130,14 @@ namespace LaptopRequisition.Application.Services
                 return Response<RequestResponseDto>.Fail(ResponseCode.ServerError, new List<string> { $"Failed to send request confirmation email: {notificationResponse.Error?.Content}" });
             }
 
-            return Response<RequestResponseDto>.Ok(await Map(request)); // FIX: Await Map
+            // FIX: Re-fetch the request with Employee and Laptop navigation properties loaded
+            var createdRequestWithDetails = await _requestRepository.GetByIdAsync(request.Id, includeRelatedEntities: true);
+            if (createdRequestWithDetails == null)
+            {
+                return Response<RequestResponseDto>.Fail(ResponseCode.NotFound, new List<string> { "Created request not found after adding." });
+            }
+
+            return Response<RequestResponseDto>.Ok(await Map(createdRequestWithDetails)); // FIX: Await Map with re-fetched request
         }
 
         // =========================
@@ -327,7 +334,7 @@ namespace LaptopRequisition.Application.Services
         // =========================
         public async Task<Response<RequestStatusDetailDto>> GetEmployeeRequestStatusDetailAsync(Guid employeeId)
         {
-            var request = await _requestRepository.GetPendingOrApprovedRequestByEmployeeIdAsync(employeeId);
+            var request = await _requestRepository.GetLatestRequestByEmployeeIdAsync(employeeId);
 
             if (request == null || request.IsDismissed)
             {

@@ -133,12 +133,11 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 .CountAsync(r => r.EmployeeId == employeeId);
         }
 
-        public async Task<Request?> GetPendingOrApprovedRequestByEmployeeIdAsync(Guid employeeId)
+        public async Task<Request?> GetLatestRequestByEmployeeIdAsync(Guid employeeId)
         {
             return await _context.Requests
-                .Where(r => r.EmployeeId == employeeId &&
-                            (r.Status == RequestStatus.Pending || r.Status == RequestStatus.Approved || r.Status == RequestStatus.Assigned))
-                .OrderByDescending(r => r.CreatedAt)
+                .Where(r => r.EmployeeId == employeeId)
+                .OrderByDescending(r => r.UpdatedAt)
                 .FirstOrDefaultAsync();
         }
 

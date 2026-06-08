@@ -67,25 +67,25 @@ namespace LaptopRequisition.WebAPI.Controllers
             }
         }
         
-        [HttpGet("check-validity/{retrievalCode}/{userRef}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(OtpBase))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CheckOtpValidity(string retrievalCode, string userRef)
-        {
-            try
-            {
-                var result = await _otpHelperService.CheckOtpValidityAsync(retrievalCode, userRef);
-                if (!result.IsSuccessful)
-                {
-                    return BadRequest(new { message = result.Message ?? "OTP validity check failed." });
-                }
-                return Ok(result.Data); 
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred during OTP validity check.", details = ex.Message });
-            }
-        }
+        // [HttpGet("check-validity/{retrievalCode}/{userRef}")]
+        // [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(OtpBase))]
+        // [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        // [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        // public async Task<IActionResult> CheckOtpValidity(string retrievalCode, string userRef)
+        // {
+        //     try
+        //     {
+        //         var result = await _otpHelperService.CheckOtpValidityAsync(retrievalCode, userRef);
+        //         if (!result.IsSuccessful)
+        //         {
+        //             return BadRequest(new { message = result.Message ?? "OTP validity check failed." });
+        //         }
+        //         return Ok(result.Data); 
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred during OTP validity check.", details = ex.Message });
+        //     }
+        // }
     }
 }

@@ -34,6 +34,7 @@ namespace LaptopRequisition.Application.Services
         private readonly NotificationApiSettings _notificationApiSettings;
         private readonly IRoleRepository _roleRepository;
         private readonly AuthSettings _authSettings;
+        private readonly ISsoPasswordResetClient _ssoPasswordResetClient; // NEW: Injected ISsoPasswordResetClient
 
         public AuthService(IEmployeeRepository employeeRepository,
                            IPasswordResetTokenRepository passwordResetTokenRepository,
@@ -45,7 +46,8 @@ namespace LaptopRequisition.Application.Services
                            INotificationApi notificationApi,
                            IOptions<NotificationApiSettings> notificationApiSettingsOptions,
                            IRoleRepository roleRepository,
-                           IOptions<AuthSettings> authSettingsOptions)
+                           IOptions<AuthSettings> authSettingsOptions,
+                           ISsoPasswordResetClient ssoPasswordResetClient) // NEW: Added to constructor
         {
             _employeeRepository = employeeRepository;
             _passwordResetTokenRepository = passwordResetTokenRepository;
@@ -58,6 +60,7 @@ namespace LaptopRequisition.Application.Services
             _notificationApiSettings = notificationApiSettingsOptions.Value;
             _roleRepository = roleRepository;
             _authSettings = authSettingsOptions.Value;
+            _ssoPasswordResetClient = ssoPasswordResetClient; // NEW: Initialized
         }
 
         public async Task<Employee> RegisterEmployeeAsync(RegisterEmployeeDto registerDto)
@@ -370,9 +373,9 @@ namespace LaptopRequisition.Application.Services
             return response;
         }
 
-        public async Task VerifyAccountAsync(string validationReference, string otp)
+        public async Task VerifyAccountAsync(string validationReference, string stringOtp) // FIX: Renamed otp to stringOtp
         {
-            var otpValidationResult = await _otpHelperService.ValidateOtpAsync(validationReference, otp);
+            var otpValidationResult = await _otpHelperService.ValidateOtpAsync(validationReference, stringOtp); // FIX: Use stringOtp
 
             // --- FIX: Use the message from otpValidationResult if it's not successful ---
             if (!otpValidationResult.IsSuccessful)
@@ -393,7 +396,34 @@ namespace LaptopRequisition.Application.Services
 
             if (employee.PasswordHash == string.Empty) // SSO managed user
             {
-                throw new InvalidOperationException("Password reset for this account is managed by the SSO system. Please use the SSO portal's password reset functionality.");
+                // --- NEW: Call SSO for password reset initiation ---
+                try
+                {
+                    var ssoRequest = new SsoInitiatePasswordResetRequestDto
+                    {
+                        Username = email // Use email as username for SSO password reset
+                    };
+                    var ssoResponse = await _ssoPasswordResetClient.InitiatePasswordReset(ssoRequest);
+
+                    if (!ssoResponse.IsSuccessStatusCode)
+                    {
+                        throw new InvalidOperationException($"SSO password reset initiation failed. Status: {ssoResponse.StatusCode}.");
+                    }
+                    if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
+                    {
+                        throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password reset initiation failed.");
+                    }
+                    return true; // SSO handled the initiation
+                }
+                catch (ApiException ex)
+                {
+                    throw new InvalidOperationException($"Failed to initiate password reset with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"An unexpected error occurred during SSO password reset initiation: {ex.Message}", ex);
+                }
+                // --- END NEW ---
             }
 
             var token = Guid.NewGuid().ToString();
@@ -453,7 +483,41 @@ namespace LaptopRequisition.Application.Services
 
             if (employee.PasswordHash == string.Empty) // SSO managed user
             {
-                throw new InvalidOperationException("Password reset for this account is managed by the SSO system. Please use the SSO portal's password reset functionality.");
+                // --- NEW: Call SSO for password reset completion ---
+                try
+                {
+                    var ssoRequest = new SsoCompletePasswordResetRequestDto
+                    {
+                        Username = employee.Email, // Use employee's email as username
+                        PasswordResetToken = token,
+                        NewPassword = newPassword
+                    };
+                    var ssoResponse = await _ssoPasswordResetClient.CompletePasswordReset(ssoRequest);
+
+                    if (!ssoResponse.IsSuccessStatusCode)
+                    {
+                        throw new InvalidOperationException($"SSO password reset completion failed. Status: {ssoResponse.StatusCode}.");
+                    }
+                    if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
+                    {
+                        throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password reset completion failed.");
+                    }
+                    
+                    // If SSO reset is successful, mark local token as used
+                    resetToken.IsUsed = true;
+                    await _passwordResetTokenRepository.UpdateAsync(resetToken);
+
+                    return true; // SSO handled the completion
+                }
+                catch (ApiException ex)
+                {
+                    throw new InvalidOperationException($"Failed to complete password reset with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"An unexpected error occurred during SSO password reset completion: {ex.Message}", ex);
+                }
+                // --- END NEW ---
             }
             
             var previousHashes = JsonSerializer.Deserialize<List<string>>(employee.PreviousPasswordHashes)
