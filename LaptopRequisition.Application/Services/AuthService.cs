@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.DTOs;
+using LaptopRequisition.Application.DTOs;
 using LaptopRequisition.Application.DTOs.Notification;
 using LaptopRequisition.Application.DTOs.SSO;
 using LaptopRequisition.Application.Helpers;
@@ -276,21 +276,31 @@ namespace LaptopRequisition.Application.Services
 
                     if (employee.IsLocked)
                     {
-                        if (employee.LockoutEndDate.HasValue && employee.LockoutEndDate > DateTime.UtcNow)
+                        if (employee.LockoutEndDate.HasValue)
                         {
-                            response.Message = $"Account is locked. Try again after {employee.LockoutEndDate.Value.ToLocalTime()}.";
-                            response.IsLocked = true;
-                            response.LockoutEndDate = employee.LockoutEndDate;
-                            response.IsSuccess = false; // Local lockout overrides SSO success
-                            return response;
+                            if (employee.LockoutEndDate > DateTime.UtcNow)
+                            {
+                                response.Message = $"Account is locked. Try again after {employee.LockoutEndDate.Value.ToLocalTime()}.";
+                                response.IsLocked = true;
+                                response.LockoutEndDate = employee.LockoutEndDate;
+                                response.IsSuccess = false; // Local lockout overrides SSO success
+                                return response;
+                            }
+                            else
+                            {
+                                // Lockout period expired, reset lockout
+                                employee.IsLocked = false;
+                                employee.FailedLoginCount = 0;
+                                employee.LockoutEndDate = null;
+                                await _employeeRepository.UpdateLoginAttemptsAsync(employee);
+                            }
                         }
                         else
                         {
-                            // Lockout period expired, reset lockout
-                            employee.IsLocked = false;
-                            employee.FailedLoginCount = 0;
-                            employee.LockoutEndDate = null;
-                            await _employeeRepository.UpdateLoginAttemptsAsync(employee);
+                            // Administrative deactivation (IsLocked is true, but LockoutEndDate is null)
+                            response.Message = "Your account has been deactivated. Please contact the administrator.";
+                            response.IsSuccess = false;
+                            return response;
                         }
                     }
 
@@ -401,7 +411,7 @@ namespace LaptopRequisition.Application.Services
                 {
                     var ssoRequest = new SsoInitiatePasswordResetRequestDto
                     {
-                        Username = email // Use email as username for SSO password reset
+                        Username = employee.Id.ToString() // Use employee's GUID as username for SSO password reset
                     };
                     var ssoResponse = await _ssoPasswordResetClient.InitiatePasswordReset(ssoRequest);
 
@@ -488,7 +498,7 @@ namespace LaptopRequisition.Application.Services
                 {
                     var ssoRequest = new SsoCompletePasswordResetRequestDto
                     {
-                        Username = employee.Email, // Use employee's email as username
+                        Username = employee.Id.ToString(), // Use employee's GUID as username
                         PasswordResetToken = token,
                         NewPassword = newPassword
                     };

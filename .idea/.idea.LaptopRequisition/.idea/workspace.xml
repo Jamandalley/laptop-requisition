@@ -20,7 +20,9 @@
   <component name="ChangeListManager">
     <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ReturnRequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ReturnRequestService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/ReturnRequestRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/ReturnRequestRepository.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -212,7 +214,9 @@
       <workItem from="1780824449295" duration="24540000" />
       <workItem from="1780904674736" duration="3014000" />
       <workItem from="1780908700220" duration="10941000" />
-      <workItem from="1780920850820" duration="4508000" />
+      <workItem from="1780920850820" duration="6940000" />
+      <workItem from="1781104083367" duration="1155000" />
+      <workItem from="1781106524521" duration="8809000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -310,7 +314,15 @@
       <option name="project" value="LOCAL" />
       <updated>1780923579594</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="updated Program.cs to apply JsonStringEnumConverter globally for all HTTP JSON serialization, including Minimal API endpoints.">
+      <option name="closed" value="true" />
+      <created>1780929969621</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1780929969628</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -333,7 +345,8 @@
     <MESSAGE value="Removed Authentication for the Get DepartmentEndpoints" />
     <MESSAGE value="Removed AdminAuthController and Switched to single login endpoint" />
     <MESSAGE value="Integrated sso into request-reset and reset password, opened get laptops methods to all authenticated users and changed request status filtering to GetLatest" />
-    <option name="LAST_COMMIT_MESSAGE" value="Integrated sso into request-reset and reset password, opened get laptops methods to all authenticated users and changed request status filtering to GetLatest" />
+    <MESSAGE value="updated Program.cs to apply JsonStringEnumConverter globally for all HTTP JSON serialization, including Minimal API endpoints." />
+    <option name="LAST_COMMIT_MESSAGE" value="updated Program.cs to apply JsonStringEnumConverter globally for all HTTP JSON serialization, including Minimal API endpoints." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

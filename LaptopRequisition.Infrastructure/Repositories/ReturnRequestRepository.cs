@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.Interfaces;
+using LaptopRequisition.Application.Interfaces;
 using LaptopRequisition.Domain;
 using LaptopRequisition.Domain.Enums; 
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +41,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
             if (includeRelatedEntities)
             {
                 query = query.Include(rr => rr.Employee)
+                                .ThenInclude(e => e.Department)
                              .Include(rr => rr.Laptop);
             }
 
@@ -81,6 +82,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 .Where(rr => rr.EmployeeId == employeeId)
                 .Include(rr => rr.Laptop)
                 .Include(rr => rr.Employee)
+                    .ThenInclude(e => e.Department)
                 .AsQueryable();
             
             if (filter.StartDate.HasValue)
@@ -131,6 +133,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
             return await _context.ReturnRequests
                 .Include(rr => rr.Laptop)
                 .Include(rr => rr.Employee)
+                    .ThenInclude(e => e.Department)
                 .FirstOrDefaultAsync(rr => rr.Id == returnRequestId);
         }
 

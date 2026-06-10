@@ -34,6 +34,8 @@ namespace LaptopRequisition.Application.Services
         private readonly ILaptopAssignmentRepository
             _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
 
+        private readonly IRequestRepository _requestRepository; // NEW: Inject IRequestRepository
+
         public ReturnRequestService(
             IReturnRequestRepository returnRequestRepository,
             IEmployeeRepository employeeRepository,
@@ -42,7 +44,8 @@ namespace LaptopRequisition.Application.Services
             INotificationService notificationService,
             INotificationApi notificationApi,
             IOptions<NotificationApiSettings> notificationApiSettingsOptions,
-            ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
+            ILaptopAssignmentRepository laptopAssignmentRepository,
+            IRequestRepository requestRepository) // NEW: Inject IRequestRepository
         {
             _returnRequestRepository = returnRequestRepository;
             _employeeRepository = employeeRepository;
@@ -52,6 +55,7 @@ namespace LaptopRequisition.Application.Services
             _notificationApi = notificationApi;
             _notificationApiSettings = notificationApiSettingsOptions.Value;
             _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
+            _requestRepository = requestRepository; // NEW: Initialize IRequestRepository
         }
 
         private Guid GetCurrentEmployeeId()
@@ -79,6 +83,8 @@ namespace LaptopRequisition.Application.Services
                 Id = returnRequest.Id,
                 EmployeeId = returnRequest.EmployeeId,
                 EmployeeName = employee?.FullName,
+                EmployeeEmail = employee?.Email,
+                DepartmentName = employee?.Department?.Name,
                 LaptopId = returnRequest.LaptopId,
                 LaptopSerialNumber = laptop?.SerialNumber,
                 Reason = returnRequest.Reason,
@@ -131,7 +137,7 @@ namespace LaptopRequisition.Application.Services
             await _notificationService.CreateNotificationAsync(employeeId,
                 $"Your return request for laptop {laptop.SerialNumber} has been submitted and is pending review.");
 
-            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            var employee = await _employeeRepository.GetByIdWithDepartmentAndRoleAsync(employeeId);
             if (employee != null)
             {
                 var emailBody = await BuildReturnRequestSubmittedEmailBodyAsync(employee.FullName, laptop.SerialNumber);
@@ -155,6 +161,9 @@ namespace LaptopRequisition.Application.Services
                         });
                 }
             }
+
+            returnRequest.Employee = employee;
+            returnRequest.Laptop = laptop;
 
             return Response<ReturnRequestResponseDto>.Ok(await MapToDto(returnRequest));
         }
@@ -249,6 +258,18 @@ namespace LaptopRequisition.Application.Services
 
                 laptop.Status = dto.ReturnedCondition;
                 await _laptopRepository.UpdateAsync(laptop);
+            }
+
+            if (returnRequest.EmployeeId.HasValue)
+            {
+                var request = await _requestRepository.GetLatestRequestByEmployeeIdAsync(returnRequest.EmployeeId.Value);
+                if (request != null && request.LaptopId == returnRequest.LaptopId)
+                {
+                    request.LaptopId = null;
+                    request.Status = RequestStatus.Returned;
+                    request.UpdatedAt = DateTime.UtcNow;
+                    await _requestRepository.UpdateAsync(request);
+                }
             }
 
             if (returnRequest.EmployeeId.HasValue)
