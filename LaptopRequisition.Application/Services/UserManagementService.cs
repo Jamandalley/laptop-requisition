@@ -85,6 +85,7 @@ namespace LaptopRequisition.Application.Services
                     IsLocked = employee.IsLocked,
                     IsVerified = employee.IsVerified,
                     IsFirstLogin = employee.IsFirstLogin,
+                    ProfilePictureUrl = employee.ProfilePictureUrl,
                     // FIX: Check LaptopAssignments for HasAssignedLaptop
                     HasAssignedLaptop = employee.LaptopAssignments != null && employee.LaptopAssignments.Any(), 
                     CreatedAt = employee.CreatedAt,
@@ -393,6 +394,7 @@ namespace LaptopRequisition.Application.Services
                     IsLocked = employee.IsLocked,
                     IsVerified = employee.IsVerified,
                     IsFirstLogin = employee.IsFirstLogin,
+                    ProfilePictureUrl = employee.ProfilePictureUrl,
                     // FIX: Check LaptopAssignments for HasAssignedLaptop
                     HasAssignedLaptop = employee.LaptopAssignments != null && employee.LaptopAssignments.Any(), 
                     CreatedAt = employee.CreatedAt,

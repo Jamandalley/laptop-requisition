@@ -87,6 +87,18 @@ namespace LaptopRequisition.WebAPI.Endpoints
                 .WithTags("Departments")
                 .WithOpenApi();
 
+            app.MapGet("/api/admin/departments/{id}/employees", async (
+                    Guid id,
+                    [FromServices] LaptopRequisition.Application.Interfaces.IUserManagementService userManagementService) =>
+                {
+                    var filter = new LaptopRequisition.Application.DTOs.Admin.EmployeeFilterDto { DepartmentId = id, PageNumber = 1, PageSize = 1000 };
+                    var response = await userManagementService.GetFilteredAndPaginatedEmployeesAsync(filter);
+                    return Results.Ok(response.Items);
+                })
+                .RequireAuthorization(policy => policy.RequireRole("REQUISITION_PORTAL_ADMIN", "Super Admin"))
+                .WithTags("Departments")
+                .WithOpenApi();
+
             return app;
         }
 

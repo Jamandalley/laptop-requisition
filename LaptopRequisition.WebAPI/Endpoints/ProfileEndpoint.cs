@@ -132,6 +132,7 @@ public static class ProfileEndpoint
                 }
             })
             .RequireAuthorization()
+            .DisableAntiforgery()
             .WithTags("ProfileService");
 
 

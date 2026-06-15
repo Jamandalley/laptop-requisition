@@ -417,7 +417,8 @@ namespace LaptopRequisition.Application.Services
 
                     if (!ssoResponse.IsSuccessStatusCode)
                     {
-                        throw new InvalidOperationException($"SSO password reset initiation failed. Status: {ssoResponse.StatusCode}.");
+                        var errorMsg = ssoResponse.Error?.Content ?? "No extra details.";
+                        throw new InvalidOperationException($"SS0 password reset initiation failed. Status: {ssoResponse.StatusCode}. Details: {errorMsg}");
                     }
                     if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
                     {

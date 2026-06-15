@@ -17,6 +17,7 @@ namespace LaptopRequisition.Application.DTOs.Admin
         public bool IsVerified { get; set; }
         public bool IsFirstLogin { get; set; }
         public bool HasAssignedLaptop { get; set; } // Derived property
+        public string? ProfilePictureUrl { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
