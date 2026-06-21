@@ -19,11 +19,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminEmployeeResponseDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminEmployeeResponseDto.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Configurations/AuthSettings.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Configurations/AuthSettings.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Password/RequestPasswordResetDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Password/RequestPasswordResetDto.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Password/ResetPasswordDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Password/ResetPasswordDto.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAdminReportingService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAdminReportingService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAuthService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAuthService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IRoleService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IRoleService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/SSO/ISsoPasswordResetClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/SSO/ISsoPasswordResetClient.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AdminReportingService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AdminReportingService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RoleService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RoleService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/UserManagementService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/UserManagementService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/DepartmentEndpoints.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/DepartmentEndpoints.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/ProfileEndpoint.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/ProfileEndpoint.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/ApplicationDbContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/ApplicationDbContext.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Migrations/ApplicationDbContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Migrations/ApplicationDbContextModelSnapshot.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminReportingController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminReportingController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AuthController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AuthController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/RoleController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/RoleController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/appsettings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -217,7 +231,7 @@
       <workItem from="1780908700220" duration="10941000" />
       <workItem from="1780920850820" duration="6940000" />
       <workItem from="1781104083367" duration="1155000" />
-      <workItem from="1781106524521" duration="12779000" />
+      <workItem from="1781106524521" duration="36168000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -331,7 +345,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781122278013</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Disabled Antiforgery for profile/picture endpoint &amp;&amp; Added ProfilePictureUrl to AdminEmployeeResponseDto and UserManagementService &amp;&amp; Created get department endpoint to get all employees">
+      <option name="closed" value="true" />
+      <created>1781514100821</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1781514100821</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -356,7 +378,8 @@
     <MESSAGE value="Integrated sso into request-reset and reset password, opened get laptops methods to all authenticated users and changed request status filtering to GetLatest" />
     <MESSAGE value="updated Program.cs to apply JsonStringEnumConverter globally for all HTTP JSON serialization, including Minimal API endpoints." />
     <MESSAGE value="Fixed ReturnRequestService and Repository to correctly assign the EmployeeEmail and DepartmentName properties and return them when called from the endpoint &amp;&amp; fixed the login endpoint to lockout deactivated employees &amp;&amp; fixed return laptop logic to unlink laptop ID after admin approval" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed ReturnRequestService and Repository to correctly assign the EmployeeEmail and DepartmentName properties and return them when called from the endpoint &amp;&amp; fixed the login endpoint to lockout deactivated employees &amp;&amp; fixed return laptop logic to unlink laptop ID after admin approval" />
+    <MESSAGE value="Disabled Antiforgery for profile/picture endpoint &amp;&amp; Added ProfilePictureUrl to AdminEmployeeResponseDto and UserManagementService &amp;&amp; Created get department endpoint to get all employees" />
+    <option name="LAST_COMMIT_MESSAGE" value="Disabled Antiforgery for profile/picture endpoint &amp;&amp; Added ProfilePictureUrl to AdminEmployeeResponseDto and UserManagementService &amp;&amp; Created get department endpoint to get all employees" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

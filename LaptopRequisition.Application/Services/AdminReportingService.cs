@@ -175,5 +175,30 @@ namespace LaptopRequisition.Application.Services
                 return Response<IEnumerable<EmployeeActivityReportDto>>.Fail(ResponseCode.ServerError, new List<string> { $"Error generating employee activity report: {ex.Message}" });
             }
         }
+        public async Task<Response<IEnumerable<DepartmentLaptopAllocationDto>>> GetDepartmentLaptopAllocationAsync()
+        {
+            try
+            {
+                var employees = await _employeeRepository.GetAllWithDepartmentAndRoleAsync();
+                var assignments = await _laptopAssignmentRepository.GetAllAsync();
+
+                var reportData = employees
+                    .Where(e => e.Department != null)
+                    .GroupBy(e => e.Department.Name)
+                    .Select(g => new DepartmentLaptopAllocationDto
+                    {
+                        DepartmentName = g.Key,
+                        LaptopCount = assignments.Count(a => g.Any(e => e.Id == a.EmployeeId))
+                    })
+                    .OrderBy(r => r.DepartmentName)
+                    .ToList();
+
+                return Response<IEnumerable<DepartmentLaptopAllocationDto>>.Ok(reportData);
+            }
+            catch (Exception ex)
+            {
+                return Response<IEnumerable<DepartmentLaptopAllocationDto>>.Fail(ResponseCode.ServerError, new List<string> { $"Error generating department laptop allocation report: {ex.Message}" });
+            }
+        }
     }
 }

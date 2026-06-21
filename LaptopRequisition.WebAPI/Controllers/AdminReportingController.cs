@@ -100,5 +100,27 @@ namespace LaptopRequisition.WebAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while generating the employee activity report.", details = ex.Message });
             }
         }
+        [HttpGet("department-laptop-allocation")] // GET /api/admin/reports/department-laptop-allocation
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DepartmentLaptopAllocationDto>))]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetDepartmentLaptopAllocationReport()
+        {
+            try
+            {
+                var report = await _adminReportingService.GetDepartmentLaptopAllocationAsync();
+                return Ok(report);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception details here
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while generating the department laptop allocation report.", details = ex.Message });
+            }
+        }
     }
 }

@@ -27,6 +27,7 @@ namespace LaptopRequisition.Application.Services
         private readonly IRequestRepository _requestRepository; // Added
         private readonly IAuthService _authService; // Added for password reset
         private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Injected LaptopAssignmentRepository
+        private readonly LaptopRequisition.Application.Interfaces.SSO.ISsoRoleClient _ssoRoleClient; // NEW
 
         public UserManagementService(IEmployeeRepository employeeRepository,
                                      ILaptopRepository laptopRepository,
@@ -34,7 +35,8 @@ namespace LaptopRequisition.Application.Services
                                      IRoleRepository roleRepository,
                                      IRequestRepository requestRepository,
                                      IAuthService authService,
-                                     ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
+                                     ILaptopAssignmentRepository laptopAssignmentRepository,
+                                     LaptopRequisition.Application.Interfaces.SSO.ISsoRoleClient ssoRoleClient) // NEW: Inject LaptopAssignmentRepository
         {
             _employeeRepository = employeeRepository;
             _laptopRepository = laptopRepository;
@@ -43,6 +45,7 @@ namespace LaptopRequisition.Application.Services
             _requestRepository = requestRepository;
             _authService = authService;
             _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
+            _ssoRoleClient = ssoRoleClient; // NEW
         }
 
         public async Task<UserManagementSummaryDto> GetUserManagementSummaryAsync()
@@ -516,6 +519,27 @@ namespace LaptopRequisition.Application.Services
                 throw new InvalidOperationException($"Invalid Role. Only 'Admin' or 'Employee' roles can be assigned.");
             }
             
+            // Sync with SSO
+            var oldRole = await _roleRepository.GetByIdAsync(employee.RoleId);
+            if (oldRole != null && oldRole.Id != newRoleId)
+            {
+                var removeResponse = await _ssoRoleClient.RemoveUserRole(oldRole.Name, employee.Id.ToString());
+                if (!removeResponse.IsSuccess && !removeResponse.Message.Contains("not in role", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Log or handle the failure if necessary, but don't strictly fail the local process if the role was already gone.
+                    // throw new InvalidOperationException($"Failed to remove old role in SSO: {removeResponse.Message}");
+                }
+            }
+
+            if (oldRole == null || oldRole.Id != newRoleId)
+            {
+                var assignResponse = await _ssoRoleClient.AssignUserRole(newRole.Name, employee.Id.ToString());
+                if (!assignResponse.IsSuccess && !assignResponse.Message.Contains("already in role", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"Failed to assign new role in SSO: {assignResponse.Message}");
+                }
+            }
+
             employee.RoleId = newRoleId;
             employee.UpdatedAt = DateTime.UtcNow;
             await _employeeRepository.UpdateAsync(employee);

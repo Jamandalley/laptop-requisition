@@ -100,6 +100,16 @@ builder.Services
     })
     .AddHttpMessageHandler<LoggingHandler>(); 
 
+// NEW: Register ISsoRoleClient
+builder.Services
+    .AddRefitClient<ISsoRoleClient>()
+    .ConfigureHttpClient((serviceProvider, client) =>
+    {
+        var ssoSettings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<SsoSettings>>().Value;
+        client.BaseAddress = new Uri(ssoSettings.BaseUrl);
+    })
+    .AddHttpMessageHandler<LoggingHandler>(); 
+
 // Register IAdminSsoClient
 builder.Services
     .AddRefitClient<IAdminSsoClient>()

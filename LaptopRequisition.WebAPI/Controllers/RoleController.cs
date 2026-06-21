@@ -21,6 +21,40 @@ namespace LaptopRequisition.WebAPI.Controllers
             _roleService = roleService;
         }
 
+        [HttpPost("create")] // POST /api/roles/create
+        [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(RoleResponseDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CreateRole([FromBody] UpdateRoleDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var newRole = await _roleService.CreateRoleAsync(dto.Name, dto.Description);
+                return CreatedAtAction(nameof(GetRoleById), new { id = newRole.Id }, newRole);
+            }
+            catch (InvalidOperationException ex) 
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception details here
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while creating the role.", details = ex.Message });
+            }
+        }
+
         [HttpGet] // GET /api/roles
         [Authorize] // Accessible to any authenticated user
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<RoleResponseDto>))]

@@ -11,5 +11,6 @@ namespace LaptopRequisition.Application.Interfaces
         Task<Response<LaptopUtilizationReportDto>> GetLaptopUtilizationReportAsync();
         Task<Response<IEnumerable<RequestTrendReportDto>>> GetRequestTrendReportAsync(DateTime startDate, DateTime endDate);
         Task<Response<IEnumerable<EmployeeActivityReportDto>>> GetEmployeeActivityReportAsync(DateTime startDate, DateTime endDate);
+        Task<Response<IEnumerable<DepartmentLaptopAllocationDto>>> GetDepartmentLaptopAllocationAsync();
     }
 }

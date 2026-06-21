@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Domain;
+using LaptopRequisition.Domain;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -150,7 +150,7 @@ namespace LaptopRequisition.Infrastructure
 
             modelBuilder.Entity<PasswordResetToken>(entity =>
             {
-                entity.Property(prt => prt.Token).HasMaxLength(255);
+                entity.Property(prt => prt.Token).HasMaxLength(768);
                 entity.HasIndex(prt => prt.Token).IsUnique();
                 entity.HasOne(prt => prt.Employee)
                     .WithMany(e => e.PasswordResetTokens)

@@ -1,11 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace LaptopRequisition.Application.DTOs
 {
     public class RequestPasswordResetDto
     {
         [Required]
-        [EmailAddress]
-        public string Email { get; set; }
+        public string EmployeeId { get; set; }
     }
 }

@@ -9,6 +9,7 @@ namespace LaptopRequisition.Application.Interfaces
     {
         Task<IEnumerable<RoleResponseDto>> GetAllRolesAsync();
         Task<RoleResponseDto> GetRoleByIdAsync(Guid id);
+        Task<RoleResponseDto> CreateRoleAsync(string roleName, string description);
         Task<RoleResponseDto> UpdateRoleAsync(Guid id, UpdateRoleDto dto);
         Task DeleteRoleAsync(Guid id);
     }

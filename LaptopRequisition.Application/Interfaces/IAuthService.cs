@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.DTOs;
+using LaptopRequisition.Application.DTOs;
 using LaptopRequisition.Domain;
 using System.Threading.Tasks; // Added for Task
 using System; // Added for Guid
@@ -10,9 +10,9 @@ namespace LaptopRequisition.Application.Interfaces
     {
         Task<Employee> RegisterEmployeeAsync(RegisterEmployeeDto registerDto);
         Task<LoginResponseDto> LoginAsync(string email, string password); // This will be the unified login method
-        Task<bool> RequestPasswordResetAsync(string email);
-        Task<bool> ResetPasswordAsync(string token, string newPassword);
-        Task<bool> ChangePasswordAsync(Guid employeeId, string currentPassword, string newPassword);
+        Task<bool> RequestPasswordResetAsync(string employeeId);
+        Task<bool> ResetPasswordAsync(string employeeId, string token, string newPassword);
+        Task<bool> ChangePasswordAsync(string employeeId, string currentPassword, string newPassword);
         
         // New method for OTP verification - SIMPLIFIED
         Task VerifyAccountAsync(string validationReference, string otp); // No longer returns anything, just throws on failure

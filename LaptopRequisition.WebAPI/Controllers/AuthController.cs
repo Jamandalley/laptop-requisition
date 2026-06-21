@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.DTOs.Login;
+using LaptopRequisition.Application.DTOs.Login;
 using LaptopRequisition.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -110,9 +110,11 @@ namespace LaptopRequisition.WebAPI.Controllers
 
             try
             {
-                await _authService.RequestPasswordResetAsync(requestDto.Email);
+                await _authService.RequestPasswordResetAsync(requestDto.EmployeeId);
                 return Ok(new
-                    { Message = "If an account with that email exists, a password reset link has been sent." });
+                { 
+                    Message = "If an account with that employee ID exists, a password reset link has been sent." 
+                });
             }
             catch (InvalidOperationException ex) // Catch InvalidOperationException for specific business logic errors
             {
@@ -139,7 +141,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 
             try
             {
-                await _authService.ResetPasswordAsync(resetDto.Token, resetDto.NewPassword);
+                await _authService.ResetPasswordAsync(resetDto.EmployeeId, resetDto.Token, resetDto.NewPassword);
                 return Ok(new { Message = "Password has been reset successfully." });
             }
             catch (InvalidOperationException ex)
@@ -150,6 +152,38 @@ namespace LaptopRequisition.WebAPI.Controllers
             {
                 // Log the exception
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred during password reset.", Details = ex.Message });
+            }
+        }
+
+        [HttpPost("change-password")]
+        [AllowAnonymous] // Allow access to change password
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changeDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _authService.ChangePasswordAsync(changeDto.EmployeeId, changeDto.CurrentPassword, changeDto.NewPassword);
+                return Ok(new { Message = "Password has been changed successfully." });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred during password change.", Details = ex.Message });
             }
         }
     }

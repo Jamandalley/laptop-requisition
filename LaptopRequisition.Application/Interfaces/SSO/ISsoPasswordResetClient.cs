@@ -11,5 +11,8 @@ namespace LaptopRequisition.Application.Interfaces.SSO
 
         [Post("/api/users/reset-password")] // NEW: Added for SSO Complete Password Reset
         Task<ApiResponse<SsoCompletePasswordResetResponseDto>> CompletePasswordReset([Body] SsoCompletePasswordResetRequestDto request);
+
+        [Post("/api/users/change-password")] // NEW: Added for SSO Change Password
+        Task<ApiResponse<SsoChangePasswordResponseDto>> ChangePassword([Body] SsoChangePasswordRequestDto request);
     }
 }

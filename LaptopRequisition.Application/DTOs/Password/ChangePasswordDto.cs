@@ -2,20 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LaptopRequisition.Application.DTOs
 {
-    public class ResetPasswordDto
+    public class ChangePasswordDto
     {
         [Required]
         public string EmployeeId { get; set; }
 
         [Required]
-        public string Token { get; set; }
+        public string CurrentPassword { get; set; }
 
         [Required]
         [StringLength(100, MinimumLength = 6)]
         public string NewPassword { get; set; }
-
-        // Removed: [Required]
-        // Removed: [Compare("NewPassword")]
-        // Removed: public string ConfirmNewPassword { get; set; }
     }
 }
