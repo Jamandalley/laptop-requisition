@@ -165,6 +165,7 @@ var app = builder.Build();
 
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Enables serving static files from wwwroot
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 

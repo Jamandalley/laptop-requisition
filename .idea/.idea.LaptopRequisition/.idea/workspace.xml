@@ -20,8 +20,7 @@
   <component name="ChangeListManager">
     <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Request/RequestResponseDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Request/RequestResponseDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RequestService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -216,7 +215,7 @@
       <workItem from="1780920850820" duration="6940000" />
       <workItem from="1781104083367" duration="1155000" />
       <workItem from="1781106524521" duration="38309000" />
-      <workItem from="1782117792798" duration="795000" />
+      <workItem from="1782117792798" duration="2524000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -346,7 +345,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782056437080</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Added staffId to the the request response flow">
+      <option name="closed" value="true" />
+      <created>1782119268184</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1782119268192</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -373,7 +380,8 @@
     <MESSAGE value="Fixed ReturnRequestService and Repository to correctly assign the EmployeeEmail and DepartmentName properties and return them when called from the endpoint &amp;&amp; fixed the login endpoint to lockout deactivated employees &amp;&amp; fixed return laptop logic to unlink laptop ID after admin approval" />
     <MESSAGE value="Disabled Antiforgery for profile/picture endpoint &amp;&amp; Added ProfilePictureUrl to AdminEmployeeResponseDto and UserManagementService &amp;&amp; Created get department endpoint to get all employees" />
     <MESSAGE value="layered the role and change password integration unto sso using refix &amp;&amp; increased the token column capacity in the database &amp;&amp; added frontend url to appsettings for reset password &amp;&amp; created department-laptop-allocation endpoint in AdminReportingController" />
-    <option name="LAST_COMMIT_MESSAGE" value="layered the role and change password integration unto sso using refix &amp;&amp; increased the token column capacity in the database &amp;&amp; added frontend url to appsettings for reset password &amp;&amp; created department-laptop-allocation endpoint in AdminReportingController" />
+    <MESSAGE value="Added staffId to the the request response flow" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added staffId to the the request response flow" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
