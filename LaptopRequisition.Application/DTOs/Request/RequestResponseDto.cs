@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Domain.Enums;
+using LaptopRequisition.Domain.Enums;
 using System; // Added for Guid and DateTime
 
 namespace LaptopRequisition.Application.DTOs.Request
@@ -11,6 +11,7 @@ namespace LaptopRequisition.Application.DTOs.Request
 
         public string EmployeeName { get; set; } = string.Empty; // Initialized to prevent CS8618 warning
         public string? EmployeeEmail { get; set; } // Added
+        public string? StaffId { get; set; } // Added
         public string? DepartmentName { get; set; } // Added
 
         public RequestStatus Status { get; set; }

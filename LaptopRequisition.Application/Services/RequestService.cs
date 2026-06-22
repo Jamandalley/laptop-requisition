@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.DTOs.Request;
+using LaptopRequisition.Application.DTOs.Request;
 using LaptopRequisition.Application.DTOs.Notification;
 using LaptopRequisition.Application.Interfaces;
 using LaptopRequisition.Application.Interfaces.External;
@@ -917,6 +917,7 @@ namespace LaptopRequisition.Application.Services
 
                 EmployeeName = request.Employee?.FullName ?? string.Empty,
                 EmployeeEmail = request.Employee?.Email,
+                StaffId = request.Employee?.StaffId,
                 DepartmentName = request.Employee?.Department?.Name,
 
                 Status = request.Status,
