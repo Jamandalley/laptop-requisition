@@ -83,9 +83,9 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            CreatedAt = new DateTime(2026, 6, 19, 16, 23, 18, 738, DateTimeKind.Utc).AddTicks(4995),
+                            CreatedAt = new DateTime(2026, 6, 22, 15, 56, 24, 481, DateTimeKind.Utc).AddTicks(6308),
                             Name = "IT",
-                            UpdatedAt = new DateTime(2026, 6, 19, 16, 23, 18, 738, DateTimeKind.Utc).AddTicks(4999)
+                            UpdatedAt = new DateTime(2026, 6, 22, 15, 56, 24, 481, DateTimeKind.Utc).AddTicks(6312)
                         });
                 });
 
@@ -240,6 +240,33 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Laptops");
+                });
+
+            modelBuilder.Entity("LaptopRequisition.Domain.LaptopAssignmentHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("LaptopId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("LaptopId");
+
+                    b.ToTable("LaptopAssignmentHistories");
                 });
 
             modelBuilder.Entity("LaptopRequisition.Domain.LaptopAssignments", b =>
@@ -448,18 +475,18 @@ namespace LaptopRequisition.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 6, 19, 16, 23, 18, 738, DateTimeKind.Utc).AddTicks(7837),
+                            CreatedAt = new DateTime(2026, 6, 22, 15, 56, 24, 481, DateTimeKind.Utc).AddTicks(8191),
                             Description = "Administrator with full access",
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2026, 6, 19, 16, 23, 18, 738, DateTimeKind.Utc).AddTicks(7838)
+                            UpdatedAt = new DateTime(2026, 6, 22, 15, 56, 24, 481, DateTimeKind.Utc).AddTicks(8193)
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 6, 19, 16, 23, 18, 738, DateTimeKind.Utc).AddTicks(7844),
+                            CreatedAt = new DateTime(2026, 6, 22, 15, 56, 24, 481, DateTimeKind.Utc).AddTicks(8199),
                             Description = "Standard employee with limited access",
                             Name = "Employee",
-                            UpdatedAt = new DateTime(2026, 6, 19, 16, 23, 18, 738, DateTimeKind.Utc).AddTicks(7845)
+                            UpdatedAt = new DateTime(2026, 6, 22, 15, 56, 24, 481, DateTimeKind.Utc).AddTicks(8200)
                         });
                 });
 
@@ -480,6 +507,21 @@ namespace LaptopRequisition.Infrastructure.Migrations
                     b.Navigation("Department");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("LaptopRequisition.Domain.LaptopAssignmentHistory", b =>
+                {
+                    b.HasOne("LaptopRequisition.Domain.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId");
+
+                    b.HasOne("LaptopRequisition.Domain.Laptop", "Laptop")
+                        .WithMany()
+                        .HasForeignKey("LaptopId");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Laptop");
                 });
 
             modelBuilder.Entity("LaptopRequisition.Domain.LaptopAssignments", b =>

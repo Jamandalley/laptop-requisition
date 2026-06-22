@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Domain;
+using LaptopRequisition.Domain;
 using System; // Added for Guid
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,7 +22,9 @@ namespace LaptopRequisition.Application.Interfaces
 
         // New methods for Admin Dashboard
         Task<int> CountAllAsync();
+        Task<int> CountUpToDateAsync(DateTime date); // New method
         Task<int> CountAvailableAsync();
+        Task<int> CountAvailableUpToDateAsync(DateTime date); // New method
         Task<int> CountByStatusAsync(LaptopStatus status); // New method
 
         // New method for User Management Summary

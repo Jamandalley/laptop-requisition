@@ -23,6 +23,7 @@ namespace LaptopRequisition.Infrastructure
         public DbSet<Role> Roles { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<LaptopAssignments> LaptopAssignments { get; set; }
+        public DbSet<LaptopAssignmentHistory> LaptopAssignmentHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -173,6 +174,20 @@ namespace LaptopRequisition.Infrastructure
                     .WithMany(l => l.LaptopAssignments)
                     .HasForeignKey(la => la.LaptopId)
                     .IsRequired(false); // FIX: Make relationship optional to handle global query filter
+            });
+
+            // Configure LaptopAssignmentHistory entity
+            modelBuilder.Entity<LaptopAssignmentHistory>(entity =>
+            {
+                entity.HasKey(lah => lah.Id);
+                entity.HasOne(lah => lah.Employee)
+                    .WithMany()
+                    .HasForeignKey(lah => lah.EmployeeId)
+                    .IsRequired(false);
+                entity.HasOne(lah => lah.Laptop)
+                    .WithMany()
+                    .HasForeignKey(lah => lah.LaptopId)
+                    .IsRequired(false);
             });
         }
 

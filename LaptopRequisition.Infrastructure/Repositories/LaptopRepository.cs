@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.Interfaces;
+using LaptopRequisition.Application.Interfaces;
 using LaptopRequisition.Domain;
 using Microsoft.EntityFrameworkCore;
 using System; // Added for Guid
@@ -83,12 +83,27 @@ namespace LaptopRequisition.Infrastructure.Repositories
             return await _context.Laptops.CountAsync();
         }
 
+        public async Task<int> CountUpToDateAsync(DateTime date)
+        {
+            return await _context.Laptops.CountAsync(l => l.CreatedAt <= date);
+        }
+
         public async Task<int> CountAvailableAsync()
         {
             // FIX: Check if laptop has no current assignment
             return await _context.Laptops
                                  .Where(l => !_context.LaptopAssignments.Any(la => la.LaptopId == l.Id))
                                  .CountAsync();
+        }
+
+        public async Task<int> CountAvailableUpToDateAsync(DateTime date)
+        {
+            // Laptops created before the date AND NOT currently assigned at that date
+            return await _context.Laptops
+                .Where(l => l.CreatedAt <= date)
+                .Where(l => !_context.LaptopAssignmentHistories
+                    .Any(lah => lah.LaptopId == l.Id && lah.AssignedAt <= date && (lah.ReturnedAt == null || lah.ReturnedAt > date)))
+                .CountAsync();
         }
 
         public async Task<int> CountByStatusAsync(LaptopStatus status) // New method

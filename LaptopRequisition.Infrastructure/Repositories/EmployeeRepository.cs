@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.Interfaces;
+using LaptopRequisition.Application.Interfaces;
 using LaptopRequisition.Domain;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -96,6 +96,11 @@ namespace LaptopRequisition.Infrastructure.Repositories
         public async Task<int> CountAllAsync()
         {
             return await _context.Employees.CountAsync();
+        }
+
+        public async Task<int> CountUpToDateAsync(DateTime date)
+        {
+            return await _context.Employees.CountAsync(e => e.CreatedAt <= date);
         }
         
         public async Task<int> CountActiveUsersAsync()

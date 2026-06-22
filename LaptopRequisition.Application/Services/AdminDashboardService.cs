@@ -27,12 +27,20 @@ namespace LaptopRequisition.Application.Services
             var availableLaptops = await _laptopRepository.CountAvailableAsync(); // Assuming this method exists
             var pendingRequests = await _requestRepository.CountByStatusAsync(RequestStatus.Pending); // Assuming this method exists
 
+            var thirtyDaysAgo = System.DateTime.UtcNow.AddDays(-30);
+            var totalStaffLastMonth = await _employeeRepository.CountUpToDateAsync(thirtyDaysAgo);
+            var totalLaptopsLastMonth = await _laptopRepository.CountUpToDateAsync(thirtyDaysAgo);
+            var availableLaptopsLastMonth = await _laptopRepository.CountAvailableUpToDateAsync(thirtyDaysAgo);
+
             return new AdminDashboardSummaryDto
             {
                 TotalStaff = totalStaff,
                 TotalLaptops = totalLaptops,
                 AvailableLaptops = availableLaptops,
-                PendingRequests = pendingRequests
+                PendingRequests = pendingRequests,
+                TotalStaffLastMonth = totalStaffLastMonth,
+                TotalLaptopsLastMonth = totalLaptopsLastMonth,
+                AvailableLaptopsLastMonth = availableLaptopsLastMonth
             };
         }
     }

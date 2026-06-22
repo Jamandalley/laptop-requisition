@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Domain;
+using LaptopRequisition.Domain;
 using System; // Added for Guid
 using System.Collections.Generic; // Added for IEnumerable
 using System.Threading.Tasks; // Added for Task
@@ -23,6 +23,7 @@ namespace LaptopRequisition.Application.Interfaces
         // Modified to include LaptopAssignments and Laptop
         Task<Employee?> GetByIdWithDepartmentAndRoleAsync(Guid employeeId, bool includeLaptopAssignments = false);
         Task<int> CountAllAsync();
+        Task<int> CountUpToDateAsync(DateTime date);
         
         Task<int> CountActiveUsersAsync();
         Task<int> CountPendingOnboardingAsync();

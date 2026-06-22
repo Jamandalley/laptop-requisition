@@ -32,6 +32,7 @@ namespace LaptopRequisition.Application.Services
         private readonly NotificationApiSettings _notificationApiSettings;
         private readonly IReturnRequestRepository _returnRequestRepository; // Added
         private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
+        private readonly ILaptopAssignmentHistoryRepository _laptopAssignmentHistoryRepository;
 
         public RequestService(
             IRequestRepository requestRepository,
@@ -42,7 +43,8 @@ namespace LaptopRequisition.Application.Services
             INotificationApi notificationApi,
             IOptions<NotificationApiSettings> notificationApiSettingsOptions,
             IReturnRequestRepository returnRequestRepository,
-            ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
+            ILaptopAssignmentRepository laptopAssignmentRepository,
+            ILaptopAssignmentHistoryRepository laptopAssignmentHistoryRepository)
         {
             _requestRepository = requestRepository;
             _employeeRepository = employeeRepository;
@@ -53,6 +55,7 @@ namespace LaptopRequisition.Application.Services
             _notificationApiSettings = notificationApiSettingsOptions.Value;
             _returnRequestRepository = returnRequestRepository; // Initialized
             _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
+            _laptopAssignmentHistoryRepository = laptopAssignmentHistoryRepository;
         }
 
         private Guid GetCurrentEmployeeId()
@@ -316,6 +319,15 @@ namespace LaptopRequisition.Application.Services
                 AssignedDate = DateTime.UtcNow // This is the source of the AssignedAt date
             };
             await _laptopAssignmentRepository.AddAsync(newAssignment);
+
+            var newHistory = new LaptopAssignmentHistory
+            {
+                EmployeeId = request.EmployeeId.Value,
+                LaptopId = laptopId,
+                AssignedAt = newAssignment.AssignedDate,
+                ReturnedAt = null
+            };
+            await _laptopAssignmentHistoryRepository.AddAsync(newHistory);
 
             laptop.Status = LaptopStatus.Assigned;
             await _laptopRepository.UpdateAsync(laptop);

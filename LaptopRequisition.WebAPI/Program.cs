@@ -55,6 +55,7 @@ builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepo
 builder.Services.AddScoped<IRoleRepository, RoleRepository>(); 
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>(); 
 builder.Services.AddScoped<ILaptopAssignmentRepository, LaptopAssignmentRepository>(); // NEW: Register LaptopAssignmentRepository
+builder.Services.AddScoped<ILaptopAssignmentHistoryRepository, LaptopAssignmentHistoryRepository>();
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();

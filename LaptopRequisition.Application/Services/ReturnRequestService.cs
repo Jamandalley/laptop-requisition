@@ -31,10 +31,9 @@ namespace LaptopRequisition.Application.Services
         private readonly INotificationApi _notificationApi;
         private readonly NotificationApiSettings _notificationApiSettings;
 
-        private readonly ILaptopAssignmentRepository
-            _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
-
+        private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
         private readonly IRequestRepository _requestRepository; // NEW: Inject IRequestRepository
+        private readonly ILaptopAssignmentHistoryRepository _laptopAssignmentHistoryRepository;
 
         public ReturnRequestService(
             IReturnRequestRepository returnRequestRepository,
@@ -45,7 +44,8 @@ namespace LaptopRequisition.Application.Services
             INotificationApi notificationApi,
             IOptions<NotificationApiSettings> notificationApiSettingsOptions,
             ILaptopAssignmentRepository laptopAssignmentRepository,
-            IRequestRepository requestRepository) // NEW: Inject IRequestRepository
+            IRequestRepository requestRepository,
+            ILaptopAssignmentHistoryRepository laptopAssignmentHistoryRepository)
         {
             _returnRequestRepository = returnRequestRepository;
             _employeeRepository = employeeRepository;
@@ -56,6 +56,7 @@ namespace LaptopRequisition.Application.Services
             _notificationApiSettings = notificationApiSettingsOptions.Value;
             _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
             _requestRepository = requestRepository; // NEW: Initialize IRequestRepository
+            _laptopAssignmentHistoryRepository = laptopAssignmentHistoryRepository;
         }
 
         private Guid GetCurrentEmployeeId()
@@ -254,6 +255,7 @@ namespace LaptopRequisition.Application.Services
                 if (currentAssignment != null)
                 {
                     await _laptopAssignmentRepository.RemoveAsync(currentAssignment);
+                    await _laptopAssignmentHistoryRepository.MarkReturnedAsync(laptop.Id, DateTime.UtcNow);
                 }
 
                 laptop.Status = dto.ReturnedCondition;
