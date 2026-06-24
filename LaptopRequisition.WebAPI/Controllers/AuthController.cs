@@ -110,10 +110,10 @@ namespace LaptopRequisition.WebAPI.Controllers
 
             try
             {
-                await _authService.RequestPasswordResetAsync(requestDto.EmployeeId);
+                await _authService.RequestPasswordResetAsync(requestDto.Email);
                 return Ok(new
                 { 
-                    Message = "If an account with that employee ID exists, a password reset link has been sent." 
+                    Message = "If an account with that email exists, a password reset link has been sent." 
                 });
             }
             catch (InvalidOperationException ex) // Catch InvalidOperationException for specific business logic errors

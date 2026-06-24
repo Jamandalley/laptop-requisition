@@ -9,7 +9,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin")]
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class AdminController : ControllerBase
     {
         private readonly IAdminDashboardService _adminDashboardService;

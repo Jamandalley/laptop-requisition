@@ -165,6 +165,12 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 
+var wwwrootDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+if (!Directory.Exists(wwwrootDir))
+{
+    Directory.CreateDirectory(wwwrootDir);
+}
+
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Enables serving static files from wwwroot
 app.UseMiddleware<ExceptionHandlingMiddleware>();

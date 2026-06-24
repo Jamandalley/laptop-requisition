@@ -5,6 +5,7 @@ namespace LaptopRequisition.Application.DTOs
     public class RequestPasswordResetDto
     {
         [Required]
-        public string EmployeeId { get; set; }
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
     }
 }

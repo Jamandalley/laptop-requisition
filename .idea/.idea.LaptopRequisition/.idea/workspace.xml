@@ -20,15 +20,18 @@
   <component name="ChangeListManager">
     <list default="true" id="237f1c0c-269e-4622-97e1-8938830e4738" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LaptopRequisition/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminDashboardSummaryDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Admin/AdminDashboardSummaryDto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IEmployeeRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IEmployeeRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/ILaptopRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AdminDashboardService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AdminDashboardService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/RequestService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ReturnRequestService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ReturnRequestService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/ApplicationDbContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/ApplicationDbContext.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/EmployeeRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/EmployeeRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/LaptopRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Infrastructure/Repositories/LaptopRepository.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Password/RequestPasswordResetDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/DTOs/Password/RequestPasswordResetDto.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAuthService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Interfaces/IAuthService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/AuthService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ProfileService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.Application/Services/ProfileService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminReportingController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminReportingController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminRequestController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AdminRequestController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AuthController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/AuthController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/LaptopController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/LaptopController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/RoleController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/RoleController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/UserManagementController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Controllers/UserManagementController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/ProfileEndpoint.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Endpoints/ProfileEndpoint.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LaptopRequisition.WebAPI/Program.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -41,7 +44,7 @@
     <option name="firstShow" value="false" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="63" />
+    <option name="cachedIndexableFilesCount" value="64" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
@@ -224,7 +227,8 @@
       <workItem from="1780920850820" duration="6940000" />
       <workItem from="1781104083367" duration="1155000" />
       <workItem from="1781106524521" duration="38309000" />
-      <workItem from="1782117792798" duration="4023000" />
+      <workItem from="1782117792798" duration="4477000" />
+      <workItem from="1782296772775" duration="775000" />
     </task>
     <task id="LOCAL-00001" summary="Initial LaptopRequisition setup with user authentication">
       <option name="closed" value="true" />
@@ -370,7 +374,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782121087329</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Created a LaptopAssignmentHistory flow and added historical totals to my dashboard-summary for frontend">
+      <option name="closed" value="true" />
+      <created>1782144256585</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1782144256595</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -399,7 +411,8 @@
     <MESSAGE value="layered the role and change password integration unto sso using refix &amp;&amp; increased the token column capacity in the database &amp;&amp; added frontend url to appsettings for reset password &amp;&amp; created department-laptop-allocation endpoint in AdminReportingController" />
     <MESSAGE value="Added staffId to the the request response flow" />
     <MESSAGE value="Added appUseStaticfiles() to the Program.cs" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added appUseStaticfiles() to the Program.cs" />
+    <MESSAGE value="Created a LaptopAssignmentHistory flow and added historical totals to my dashboard-summary for frontend" />
+    <option name="LAST_COMMIT_MESSAGE" value="Created a LaptopAssignmentHistory flow and added historical totals to my dashboard-summary for frontend" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

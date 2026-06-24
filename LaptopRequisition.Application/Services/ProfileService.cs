@@ -95,6 +95,11 @@ public class ProfileService(
             return Response<string>.Fail(ResponseCode.NotFound, new List<string> { "Employee not found" }); // FIX: Wrapped in List<string>
         }
 
+        if (file == null || file.Length == 0)
+        {
+            return Response<string>.Fail(ResponseCode.BadRequest, new List<string> { "No file uploaded." });
+        }
+
         var uploadsFolder = Path.Combine(
             Directory.GetCurrentDirectory(),
             "wwwroot",

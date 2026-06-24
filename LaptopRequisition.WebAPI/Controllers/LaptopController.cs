@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.DTOs.Laptop;
+using LaptopRequisition.Application.DTOs.Laptop;
 using LaptopRequisition.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization; // Added for Authorize attribute
@@ -26,7 +26,7 @@ public class LaptopsController : ControllerBase
     }
 
     [HttpPost] // POST /api/laptops (Create Laptop)
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(LaptopResponseDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -107,7 +107,7 @@ public class LaptopsController : ControllerBase
     }
 
     [HttpPut("{id}")] // PUT /api/laptops/{id} (Update Laptop)
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(LaptopResponseDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -149,7 +149,7 @@ public class LaptopsController : ControllerBase
     }
 
     [HttpDelete("{id}")] // DELETE /api/laptops/{id} (Delete Laptop)
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -182,7 +182,7 @@ public class LaptopsController : ControllerBase
     }
 
     [HttpPost("{laptopId}/assign/{employeeId}")] // POST /api/laptops/{laptopId}/assign/{employeeId}
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -215,7 +215,7 @@ public class LaptopsController : ControllerBase
     }
 
     [HttpPut("{laptopId}/unassign")] // PUT /api/laptops/{laptopId}/unassign
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -248,7 +248,7 @@ public class LaptopsController : ControllerBase
     }
 
     [HttpPost("bulk-upload")] // POST /api/laptops/bulk-upload
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<BulkUploadResultDto>))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -282,7 +282,7 @@ public class LaptopsController : ControllerBase
     }
 
     [HttpGet("export")] // GET /api/laptops/export
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Restricted to Admin roles
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

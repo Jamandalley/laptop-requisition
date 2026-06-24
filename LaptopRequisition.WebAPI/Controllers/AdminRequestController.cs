@@ -16,7 +16,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/requests")] // Dedicated route for admin request management
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class AdminRequestController : ControllerBase
     {
         private readonly IRequestService _requestService;

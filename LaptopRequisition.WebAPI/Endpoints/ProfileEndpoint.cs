@@ -115,8 +115,12 @@ public static class ProfileEndpoint
                 try
                 {
                     var employeeId = context.User.GetEmployeeId(); // FIX: Use extension method
-                    var imageUrl = await service.UploadProfilePictureAsync(employeeId, file);
-                    return Results.Ok(new { imageUrl });
+                    var response = await service.UploadProfilePictureAsync(employeeId, file);
+                    if (!response.IsSuccessful)
+                    {
+                        return Results.BadRequest(new { message = response.Message ?? "Failed to upload picture." });
+                    }
+                    return Results.Ok(new { imageUrl = response.Data });
                 }
                 catch (UnauthorizedAccessException)
                 {

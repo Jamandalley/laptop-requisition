@@ -270,7 +270,7 @@ namespace LaptopRequisition.Application.Services
                         employee.Role = highestSsoRole; // Update navigation property for immediate use
                         await _employeeRepository.UpdateAsync(employee);
                         response.EmployeeDetails.Role = highestSsoRole.Name; // Update DTO
-                        response.IsAdmin = (highestSsoRole.Name == "REQUISITION_PORTAL_ADMIN" || highestSsoRole.Name == "Super Admin"); // Update IsAdmin based on new role
+                        response.IsAdmin = (highestSsoRole.Name == "Admin" || highestSsoRole.Name == "REQUISITION_PORTAL_ADMIN" || highestSsoRole.Name == "Super Admin"); // Update IsAdmin based on new role
                     }
                     // --- END NEW ---
 
@@ -335,7 +335,7 @@ namespace LaptopRequisition.Application.Services
                         IsFirstLogin = false
                     };
 
-                    response.IsAdmin = ssoRoles.Contains("REQUISITION_PORTAL_ADMIN") || ssoRoles.Contains("Super Admin");
+                    response.IsAdmin = ssoRoles.Contains("Admin") || ssoRoles.Contains("REQUISITION_PORTAL_ADMIN") || ssoRoles.Contains("Super Admin");
                     response.IsFirstLogin = false;
                 }
             }
@@ -396,114 +396,77 @@ namespace LaptopRequisition.Application.Services
             // --- END FIX ---
         }
 
-        public async Task<bool> RequestPasswordResetAsync(string employeeId)
+        public async Task<bool> RequestPasswordResetAsync(string email)
         {
-            if (!Guid.TryParse(employeeId, out var employeeGuid))
+            if (string.IsNullOrWhiteSpace(email))
             {
-                return true; // Security by obscurity / invalid Guid format
+                return true; // Security by obscurity
             }
 
-            var employee = await _employeeRepository.GetByIdWithDepartmentAndRoleAsync(employeeGuid);
+            var employee = await _employeeRepository.GetByEmailWithDepartmentAndRoleAsync(email);
             if (employee == null)
             {
                 return true; // Security by obscurity
             }
 
-            if (employee.PasswordHash == string.Empty) // SSO managed user
+            // --- ALWAYS Call SSO for password reset initiation ---
+            try
             {
-                // --- NEW: Call SSO for password reset initiation ---
-                try
+                var ssoRequest = new SsoInitiatePasswordResetRequestDto
                 {
-                    var ssoRequest = new SsoInitiatePasswordResetRequestDto
-                    {
-                        Username = employee.Id.ToString() // Use employee's GUID as username for SSO password reset
-                    };
-                    var ssoResponse = await _ssoPasswordResetClient.InitiatePasswordReset(ssoRequest);
+                    Username = employee.Id.ToString() // Use employee's GUID as username for SSO password reset
+                };
+                var ssoResponse = await _ssoPasswordResetClient.InitiatePasswordReset(ssoRequest);
 
-                    if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
-                    {
-                        throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password reset initiation failed.");
-                    }
-
-                    var ssoToken = ssoResponse.Content.Data?.PasswordResetToken;
-                    if (string.IsNullOrEmpty(ssoToken))
-                    {
-                        throw new InvalidOperationException("SSO password reset initiation succeeded but returned no token.");
-                    }
-
-                    var ssoPasswordResetToken = new PasswordResetToken
-                    {
-                        Id = Guid.NewGuid(),
-                        EmployeeId = employee.Id,
-                        Token = ssoToken,
-                        ExpiresAt = DateTime.UtcNow.AddMinutes(30),
-                        IsUsed = false
-                    };
-
-                    await _passwordResetTokenRepository.AddAsync(ssoPasswordResetToken);
-
-                    var ssoResetLink = $"{_authSettings.FrontendBaseUrl.TrimEnd('/')}/reset-password?token={Uri.EscapeDataString(ssoToken)}&employeeId={employee.Id}";
-                    var ssoEmailBody = await BuildPasswordResetEmailBodyAsync(ssoResetLink, employee.FullName);
-                    var ssoNotificationRequest = new NotificationRequest
-                    {
-                        Channels = new List<string> { "Email" },
-                        From = _notificationApiSettings.FromEmail,
-                        To = employee.Email,
-                        Subject = "Password Reset Request",
-                        Message = ssoEmailBody
-                    };
-                    var ssoNotificationResponse = await _notificationApi.SendNotificationAsync(ssoNotificationRequest);
-
-                    if (!ssoNotificationResponse.IsSuccessStatusCode || !ssoNotificationResponse.Content.IsSuccessful)
-                    {
-                        throw new InvalidOperationException($"Failed to send password reset email: {ssoNotificationResponse.Error?.Content}");
-                    }
-
-                    return true;
-                }
-                catch (ApiException ex)
+                if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
                 {
-                    throw new InvalidOperationException($"Failed to initiate password reset with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
+                    throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password reset initiation failed.");
                 }
-                catch (Exception ex)
+
+                var ssoToken = ssoResponse.Content.Data?.PasswordResetToken;
+                if (string.IsNullOrEmpty(ssoToken))
                 {
-                    throw new InvalidOperationException($"An unexpected error occurred during SSO password reset initiation: {ex.Message}", ex);
+                    throw new InvalidOperationException("SSO password reset initiation succeeded but returned no token.");
                 }
-                // --- END NEW ---
+
+                var ssoPasswordResetToken = new PasswordResetToken
+                {
+                    Id = Guid.NewGuid(),
+                    EmployeeId = employee.Id,
+                    Token = ssoToken,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+                    IsUsed = false
+                };
+
+                await _passwordResetTokenRepository.AddAsync(ssoPasswordResetToken);
+
+                var ssoResetLink = $"{_authSettings.FrontendBaseUrl.TrimEnd('/')}/reset-password?token={Uri.EscapeDataString(ssoToken)}&employeeId={employee.Id}";
+                var ssoEmailBody = await BuildPasswordResetEmailBodyAsync(ssoResetLink, employee.FullName);
+                var ssoNotificationRequest = new NotificationRequest
+                {
+                    Channels = new List<string> { "Email" },
+                    From = _notificationApiSettings.FromEmail,
+                    To = employee.Email,
+                    Subject = "Password Reset Request",
+                    Message = ssoEmailBody
+                };
+                var ssoNotificationResponse = await _notificationApi.SendNotificationAsync(ssoNotificationRequest);
+
+                if (!ssoNotificationResponse.IsSuccessStatusCode || !ssoNotificationResponse.Content.IsSuccessful)
+                {
+                    throw new InvalidOperationException($"Failed to send password reset email: {ssoNotificationResponse.Error?.Content}");
+                }
+
+                return true;
             }
-
-            var token = Guid.NewGuid().ToString();
-            var passwordResetToken = new PasswordResetToken
+            catch (ApiException ex)
             {
-                Id = Guid.NewGuid(),
-                EmployeeId = employee.Id,
-                Token = token,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
-                IsUsed = false
-            };
-
-            await _passwordResetTokenRepository.AddAsync(passwordResetToken);
-            
-            var resetLink = $"{_authSettings.FrontendBaseUrl.TrimEnd('/')}/reset-password?token={token}";
-            // Replaced direct email service with Notification API
-            var emailBody = await BuildPasswordResetEmailBodyAsync(resetLink, employee.FullName);
-            var notificationRequest = new NotificationRequest
-            {
-                Channels = new List<string> { "Email" },
-                From = _notificationApiSettings.FromEmail,
-                To = employee.Email,
-                Subject = "Password Reset Request",
-                Message = emailBody
-            };
-            var notificationResponse = await _notificationApi.SendNotificationAsync(notificationRequest);
-
-            if (!notificationResponse.IsSuccessStatusCode || !notificationResponse.Content.IsSuccessful)
-            {
-                // Log error if notification failed
-                throw new InvalidOperationException($"Failed to send password reset email: {notificationResponse.Error?.Content}");
+                throw new InvalidOperationException($"Failed to initiate password reset with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
             }
-
-            return true;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred during SSO password reset initiation: {ex.Message}", ex);
+            }
         }
 
         public async Task<bool> ResetPasswordAsync(string employeeId, string token, string newPassword)
@@ -537,72 +500,70 @@ namespace LaptopRequisition.Application.Services
                 throw new InvalidOperationException("Employee not found for the given token.");
             }
 
-            if (employee.PasswordHash == string.Empty) // SSO managed user
+            var previousHashes = new List<string>();
+            if (employee.PasswordHash != string.Empty)
             {
-                // --- NEW: Call SSO for password reset completion ---
-                try
-                {
-                    var ssoRequest = new SsoCompletePasswordResetRequestDto
-                    {
-                        Username = employee.Id.ToString(), // Use employee's GUID as username
-                        PasswordResetToken = token,
-                        NewPassword = newPassword
-                    };
-                    var ssoResponse = await _ssoPasswordResetClient.CompletePasswordReset(ssoRequest);
-
-                    if (!ssoResponse.IsSuccessStatusCode)
-                    {
-                        throw new InvalidOperationException($"SSO password reset completion failed. Status: {ssoResponse.StatusCode}.");
-                    }
-                    if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
-                    {
-                        throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password reset completion failed.");
-                    }
-                    
-                    // If SSO reset is successful, mark local token as used
-                    resetToken.IsUsed = true;
-                    await _passwordResetTokenRepository.UpdateAsync(resetToken);
-
-                    return true; // SSO handled the completion
-                }
-                catch (ApiException ex)
-                {
-                    throw new InvalidOperationException($"Failed to complete password reset with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException($"An unexpected error occurred during SSO password reset completion: {ex.Message}", ex);
-                }
-                // --- END NEW ---
-            }
-            
-            var previousHashes = JsonSerializer.Deserialize<List<string>>(employee.PreviousPasswordHashes)
+                previousHashes = JsonSerializer.Deserialize<List<string>>(employee.PreviousPasswordHashes)
                                  ?? new List<string>(); 
-            foreach (var oldHash in previousHashes)
-            {
-                if (BCrypt.Net.BCrypt.Verify(newPassword, oldHash))
+                foreach (var oldHash in previousHashes)
                 {
-                    throw new InvalidOperationException("New password cannot be one of the last 3 used passwords.");
+                    if (BCrypt.Net.BCrypt.Verify(newPassword, oldHash))
+                    {
+                        throw new InvalidOperationException("New password cannot be one of the last 3 used passwords.");
+                    }
                 }
             }
 
-            string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            
-            previousHashes.Add(newPasswordHash);
-            if (previousHashes.Count > 3)
+            // --- ALWAYS Call SSO for password reset completion ---
+            try
             {
-                previousHashes.RemoveAt(0); 
-            }
-            employee.PreviousPasswordHashes = JsonSerializer.Serialize(previousHashes);
-            
-            employee.PasswordHash = newPasswordHash;
-            employee.FailedLoginCount = 0;
-            employee.IsLocked = false;
-            
-            resetToken.IsUsed = true;
+                var ssoRequest = new SsoCompletePasswordResetRequestDto
+                {
+                    Username = employee.Id.ToString(), // Use employee's GUID as username
+                    PasswordResetToken = token,
+                    NewPassword = newPassword
+                };
+                var ssoResponse = await _ssoPasswordResetClient.CompletePasswordReset(ssoRequest);
 
-            await _employeeRepository.UpdateAsync(employee);
-            await _passwordResetTokenRepository.UpdateAsync(resetToken);
+                if (!ssoResponse.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException($"SSO password reset completion failed. Status: {ssoResponse.StatusCode}.");
+                }
+                if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
+                {
+                    throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password reset completion failed.");
+                }
+                
+                // If SSO reset is successful, mark local token as used
+                resetToken.IsUsed = true;
+                await _passwordResetTokenRepository.UpdateAsync(resetToken);
+            }
+            catch (ApiException ex)
+            {
+                throw new InvalidOperationException($"Failed to complete password reset with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred during SSO password reset completion: {ex.Message}", ex);
+            }
+            
+            if (employee.PasswordHash != string.Empty)
+            {
+                string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+                
+                previousHashes.Add(newPasswordHash);
+                if (previousHashes.Count > 3)
+                {
+                    previousHashes.RemoveAt(0); 
+                }
+                employee.PreviousPasswordHashes = JsonSerializer.Serialize(previousHashes);
+                
+                employee.PasswordHash = newPasswordHash;
+                employee.FailedLoginCount = 0;
+                employee.IsLocked = false;
+                
+                await _employeeRepository.UpdateAsync(employee);
+            }
 
             return true;
         }
@@ -620,68 +581,71 @@ namespace LaptopRequisition.Application.Services
                 throw new InvalidOperationException("Employee not found.");
             }
             
-            if (employee.PasswordHash == string.Empty) // SSO managed user
+            var previousHashes = new List<string>();
+            if (employee.PasswordHash != string.Empty)
             {
-                try
+                if (!BCrypt.Net.BCrypt.Verify(currentPassword, employee.PasswordHash))
                 {
-                    var ssoRequest = new SsoChangePasswordRequestDto
+                    throw new UnauthorizedAccessException("Incorrect current password.");
+                }
+                
+                previousHashes = JsonSerializer.Deserialize<List<string>>(employee.PreviousPasswordHashes)
+                                     ?? new List<string>(); 
+                foreach (var oldHash in previousHashes)
+                {
+                    if (BCrypt.Net.BCrypt.Verify(newPassword, oldHash))
                     {
-                        Username = employee.Id.ToString(),
-                        CurrentPassword = currentPassword,
-                        NewPassword = newPassword
-                    };
-                    var ssoResponse = await _ssoPasswordResetClient.ChangePassword(ssoRequest);
-
-                    if (!ssoResponse.IsSuccessStatusCode)
-                    {
-                        var errorMsg = ssoResponse.Error?.Content ?? "No extra details.";
-                        throw new InvalidOperationException($"SSO password change failed. Status: {ssoResponse.StatusCode}. Details: {errorMsg}");
+                        throw new InvalidOperationException("New password cannot be one of the last 3 used passwords.");
                     }
-                    if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
-                    {
-                        throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password change failed.");
-                    }
-
-                    return true;
-                }
-                catch (ApiException ex)
-                {
-                    throw new InvalidOperationException($"Failed to change password with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException($"An unexpected error occurred during SSO password change: {ex.Message}", ex);
                 }
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(currentPassword, employee.PasswordHash))
+            // ALWAYS call SSO to change password
+            try
             {
-                throw new UnauthorizedAccessException("Incorrect current password.");
-            }
-            
-            var previousHashes = JsonSerializer.Deserialize<List<string>>(employee.PreviousPasswordHashes)
-                                 ?? new List<string>(); 
-            foreach (var oldHash in previousHashes)
-            {
-                if (BCrypt.Net.BCrypt.Verify(newPassword, oldHash))
+                var ssoRequest = new SsoChangePasswordRequestDto
                 {
-                    throw new InvalidOperationException("New password cannot be one of the last 3 used passwords.");
+                    Username = employee.Id.ToString(),
+                    CurrentPassword = currentPassword,
+                    NewPassword = newPassword
+                };
+                var ssoResponse = await _ssoPasswordResetClient.ChangePassword(ssoRequest);
+
+                if (!ssoResponse.IsSuccessStatusCode)
+                {
+                    var errorMsg = ssoResponse.Error?.Content ?? "No extra details.";
+                    throw new InvalidOperationException($"SSO password change failed. Status: {ssoResponse.StatusCode}. Details: {errorMsg}");
+                }
+                if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
+                {
+                    throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password change failed.");
                 }
             }
-
-            string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            previousHashes.Add(newPasswordHash);
-            if (previousHashes.Count > 3)
+            catch (ApiException ex)
             {
-                previousHashes.RemoveAt(0); 
+                throw new InvalidOperationException($"Failed to change password with SSO system. Status: {ex.StatusCode}. Message: {ex.Content}", ex);
             }
-            employee.PreviousPasswordHashes = JsonSerializer.Serialize(previousHashes);
-            
-            employee.PasswordHash = newPasswordHash;
-            employee.FailedLoginCount = 0;
-            employee.IsLocked = false;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An unexpected error occurred during SSO password change: {ex.Message}", ex);
+            }
 
-            await _employeeRepository.UpdateAsync(employee);
+            if (employee.PasswordHash != string.Empty)
+            {
+                string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+                previousHashes.Add(newPasswordHash);
+                if (previousHashes.Count > 3)
+                {
+                    previousHashes.RemoveAt(0); 
+                }
+                employee.PreviousPasswordHashes = JsonSerializer.Serialize(previousHashes);
+                
+                employee.PasswordHash = newPasswordHash;
+                employee.FailedLoginCount = 0;
+                employee.IsLocked = false;
+
+                await _employeeRepository.UpdateAsync(employee);
+            }
 
             return true;
         }

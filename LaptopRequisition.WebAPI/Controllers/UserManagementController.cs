@@ -13,7 +13,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/users")] // Dedicated route for admin user management
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class UserManagementController : ControllerBase
     {
         private readonly IUserManagementService _userManagementService;

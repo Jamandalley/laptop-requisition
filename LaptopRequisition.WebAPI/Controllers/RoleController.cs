@@ -22,7 +22,7 @@ namespace LaptopRequisition.WebAPI.Controllers
         }
 
         [HttpPost("create")] // POST /api/roles/create
-        [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
+        [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(RoleResponseDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -107,7 +107,7 @@ namespace LaptopRequisition.WebAPI.Controllers
         }
 
         [HttpPut("{id}")] // PUT /api/roles/{id}
-        [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
+        [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RoleResponseDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -146,7 +146,7 @@ namespace LaptopRequisition.WebAPI.Controllers
         }
 
         [HttpDelete("{id}")] // DELETE /api/roles/{id}
-        [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
+        [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // Restricted to Admin roles
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

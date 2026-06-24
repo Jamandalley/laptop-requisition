@@ -10,7 +10,7 @@ namespace LaptopRequisition.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/admin/reports")] // Dedicated route for admin reports
-    [Authorize(Roles = "REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
+    [Authorize(Roles = "Admin,REQUISITION_PORTAL_ADMIN,Super Admin")] // FIX: Updated to match SSO admin roles
     public class AdminReportingController : ControllerBase
     {
         private readonly IAdminReportingService _adminReportingService;

@@ -10,7 +10,7 @@ namespace LaptopRequisition.Application.Interfaces
     {
         Task<Employee> RegisterEmployeeAsync(RegisterEmployeeDto registerDto);
         Task<LoginResponseDto> LoginAsync(string email, string password); // This will be the unified login method
-        Task<bool> RequestPasswordResetAsync(string employeeId);
+        Task<bool> RequestPasswordResetAsync(string email);
         Task<bool> ResetPasswordAsync(string employeeId, string token, string newPassword);
         Task<bool> ChangePasswordAsync(string employeeId, string currentPassword, string newPassword);
         
