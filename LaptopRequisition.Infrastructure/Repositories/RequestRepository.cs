@@ -95,7 +95,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
                 .ToListAsync();
 
             return new PaginatedResultDto<Request>
-            {
+            { 
                 Items = items,
                 TotalCount = totalCount,
                 PageNumber = filter.PageNumber,
@@ -112,7 +112,7 @@ namespace LaptopRequisition.Infrastructure.Repositories
         }
 
         public async Task UpdateAsync(Request request)
-        {
+        {   
             _context.Requests.Update(request);
             await _context.SaveChangesAsync();
         }

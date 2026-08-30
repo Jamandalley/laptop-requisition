@@ -16,8 +16,8 @@
         </PackageReference>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2" /> <!-- Updated version here -->
-        <PackageReference Include="Refit" Version="7.0.0" /> <!-- Added this line -->
-        <PackageReference Include="Refit.HttpClientFactory" Version="7.0.0" /> <!-- Added this line -->
+        <PackageReference Include="Refit" Version="8.0.0" /> <!-- Added this line -->
+        <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0" /> <!-- Added this line -->
     </ItemGroup>
 
     <ItemGroup>

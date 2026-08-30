@@ -418,6 +418,11 @@ namespace LaptopRequisition.Application.Services
                 };
                 var ssoResponse = await _ssoPasswordResetClient.InitiatePasswordReset(ssoRequest);
 
+                if (!ssoResponse.IsSuccessStatusCode)
+                {
+                    var errorDetails = ssoResponse.Error?.Content ?? ssoResponse.ReasonPhrase;
+                    throw new InvalidOperationException($"SSO password reset initiation failed. Status: {ssoResponse.StatusCode}. Details: {errorDetails}");
+                }
                 if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
                 {
                     throw new InvalidOperationException(ssoResponse.Content?.Message ?? "SSO password reset initiation failed.");
@@ -527,7 +532,8 @@ namespace LaptopRequisition.Application.Services
 
                 if (!ssoResponse.IsSuccessStatusCode)
                 {
-                    throw new InvalidOperationException($"SSO password reset completion failed. Status: {ssoResponse.StatusCode}.");
+                    var errorDetails = ssoResponse.Error?.Content ?? ssoResponse.ReasonPhrase;
+                    throw new InvalidOperationException($"SSO password reset completion failed. Status: {ssoResponse.StatusCode}. Details: {errorDetails}");
                 }
                 if (ssoResponse.Content == null || !ssoResponse.Content.IsSuccess)
                 {

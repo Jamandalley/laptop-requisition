@@ -25,6 +25,10 @@ namespace LaptopRequisition.Application.Interfaces.SSO
         [Headers("Content-Type: application/x-www-form-urlencoded")]
         Task<SsoTokenResponseDto> GetSsoToken([Body(BodySerializationMethod.UrlEncoded)] SsoTokenRequestDto request);
 
+        [Post("/connect/token")]
+        [Headers("Content-Type: application/x-www-form-urlencoded")]
+        Task<SsoTokenResponseDto> GetClientCredentialsToken([Body(BodySerializationMethod.UrlEncoded)] SsoClientCredentialsTokenRequestDto request);
+
         /// <summary>
         /// Performs a direct login to the SSO system using JSON credentials.
         /// </summary>

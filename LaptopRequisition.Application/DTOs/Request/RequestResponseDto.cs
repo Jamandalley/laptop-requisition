@@ -18,7 +18,7 @@ namespace LaptopRequisition.Application.DTOs.Request
 
         public string Purpose { get; set; } = string.Empty; // Initialized to prevent CS8618 warning
 
-        public string? PreferredSpecs { get; set; }
+        public string? PreferredSpecs { get; set; } 
 
         public bool IsSwapRequest { get; set; }
 

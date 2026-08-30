@@ -77,6 +77,7 @@ builder.Services.AddHostedService<RecycleBinCleanupService>();
 
 
 builder.Services.AddTransient<LoggingHandler>(); 
+builder.Services.AddTransient<SsoAuthHeaderHandler>(); // NEW: Register SsoAuthHeaderHandler
 
 
 builder.Services.Configure<SsoSettings>(builder.Configuration.GetSection("SsoSettings"));
@@ -128,6 +129,7 @@ builder.Services
         var otpApiSettings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OtpApiSettings>>().Value;
         client.BaseAddress = new Uri(otpApiSettings.BaseUrl);
     })
+    .AddHttpMessageHandler<SsoAuthHeaderHandler>() // Add SsoAuthHeaderHandler
     .AddHttpMessageHandler<LoggingHandler>(); 
 
 builder.Services
@@ -137,7 +139,7 @@ builder.Services
         var notificationApiSettings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<NotificationApiSettings>>().Value;
         client.BaseAddress = new Uri(notificationApiSettings.BaseUrl);
     })
-    .AddHttpMessageHandler<LoggingHandler>(); 
+    .AddHttpMessageHandler<LoggingHandler>();  
 
 // NEW: Register ISsoPasswordResetClient
 builder.Services

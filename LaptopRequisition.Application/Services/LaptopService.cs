@@ -1,4 +1,4 @@
-﻿using LaptopRequisition.Application.DTOs.Laptop; // Updated namespace for Laptop DTOs
+using LaptopRequisition.Application.DTOs.Laptop; // Updated namespace for Laptop DTOs
 using LaptopRequisition.Application.Interfaces;
 using LaptopRequisition.Domain;
 using LaptopRequisition.Domain.Enums; // Added for OperatingSystemEnum and LaptopStatus
@@ -29,13 +29,15 @@ public class LaptopService : ILaptopService
     private readonly IHttpContextAccessor _httpContextAccessor; // Added
     private readonly INotificationService _notificationService; // Added
     private readonly ILaptopAssignmentRepository _laptopAssignmentRepository; // NEW: Inject LaptopAssignmentRepository
+    private readonly IRequestRepository _requestRepository; // NEW
 
     public LaptopService(ILaptopRepository laptopRepository, 
                          IEmployeeRepository employeeRepository,
                          IAuditLogRepository auditLogRepository, // Added
                          IHttpContextAccessor httpContextAccessor, // Added
                          INotificationService notificationService,
-                         ILaptopAssignmentRepository laptopAssignmentRepository) // NEW: Inject LaptopAssignmentRepository
+                         ILaptopAssignmentRepository laptopAssignmentRepository,
+                         IRequestRepository requestRepository) // NEW: Inject LaptopAssignmentRepository
     {
         _laptopRepository = laptopRepository;
         _employeeRepository = employeeRepository;
@@ -43,6 +45,7 @@ public class LaptopService : ILaptopService
         _httpContextAccessor = httpContextAccessor; // Initialized
         _notificationService = notificationService; // Initialized
         _laptopAssignmentRepository = laptopAssignmentRepository; // NEW: Initialize LaptopAssignmentRepository
+        _requestRepository = requestRepository; // NEW
     }
 
     public async Task<LaptopResponseDto> CreateLaptopAsync(CreateLaptopDto dto)
@@ -327,7 +330,7 @@ public class LaptopService : ILaptopService
         {
             throw new InvalidOperationException("Employee not found.");
         }
-
+        
         // Check if laptop is already assigned
         var existingLaptopAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForLaptopAsync(laptopId);
         if (existingLaptopAssignment != null)
@@ -338,7 +341,7 @@ public class LaptopService : ILaptopService
         // Check if the employee already has an assigned laptop
         var existingEmployeeAssignment = await _laptopAssignmentRepository.GetCurrentAssignmentForEmployeeAsync(employeeId);
         if (existingEmployeeAssignment != null)
-        {
+        { 
             throw new InvalidOperationException($"Employee '{existingEmployeeAssignment.Employee?.FullName}' already has laptop '{existingEmployeeAssignment.Laptop?.SerialNumber}' assigned. Please unassign it first.");
         }
 
@@ -385,7 +388,17 @@ public class LaptopService : ILaptopService
         // Update laptop status
         laptop.Status = LaptopStatus.Available;
         laptop.UpdatedAt = DateTime.UtcNow;
-        await _laptopRepository.UpdateAsync(laptop); // This will also save changes to LaptopAssignments due to SaveChangesAsync override
+        await _laptopRepository.UpdateAsync(laptop); 
+
+        // Update the associated request if it is still marked as Assigned
+        var latestRequest = await _requestRepository.GetLatestRequestByEmployeeIdAsync(currentAssignment.EmployeeId);
+        if (latestRequest != null && latestRequest.LaptopId == laptopId && latestRequest.Status == RequestStatus.Assigned)
+        {
+            latestRequest.LaptopId = null; // FIX: Ensure the laptop is detached from the request
+            latestRequest.Status = RequestStatus.Returned; // or you could use Completed / None depending on your business rules
+            latestRequest.UpdatedAt = DateTime.UtcNow;
+            await _requestRepository.UpdateAsync(latestRequest);
+        }
 
         // Notify employee
         await _notificationService.CreateNotificationAsync(
