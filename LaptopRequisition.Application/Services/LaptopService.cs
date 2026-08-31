@@ -392,7 +392,8 @@ public class LaptopService : ILaptopService
 
         // Update the associated request if it is still marked as Assigned
         var latestRequest = await _requestRepository.GetLatestRequestByEmployeeIdAsync(currentAssignment.EmployeeId);
-        if (latestRequest != null && latestRequest.LaptopId == laptopId && latestRequest.Status == RequestStatus.Assigned)
+        if (latestRequest != null && latestRequest.LaptopId == laptopId && 
+            (latestRequest.Status == RequestStatus.Assigned || latestRequest.Status == RequestStatus.Completed))
         {
             latestRequest.LaptopId = null; // FIX: Ensure the laptop is detached from the request
             latestRequest.Status = RequestStatus.Returned; // or you could use Completed / None depending on your business rules

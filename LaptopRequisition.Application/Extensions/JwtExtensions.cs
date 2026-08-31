@@ -22,7 +22,7 @@ namespace LaptopRequisition.Application.Extensions
         public static IServiceCollection AddAuthPlatform(this IServiceCollection services, IConfiguration configuration)
         {
             // ✅ Enable PII logging for debugging (DISABLE IN PRODUCTION!)
-            IdentityModelEventSource.ShowPII = 
+           IdentityModelEventSource.ShowPII = 
                 configuration.GetValue("Jwt:ShowPII", false);
             
             var issuer = configuration["Jwt:Issuer"];   // e.g. https://sso-app.digitvant.com/
